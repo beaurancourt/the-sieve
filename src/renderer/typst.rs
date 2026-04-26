@@ -408,39 +408,56 @@ fn escape_typst(text: &str) -> String {
 }
 
 /// Convert markdown content to Typst, handling bold, italic, and headings
+/// Render statblock/boxed-text content to Typst.
+///
+/// Single newlines are soft (joined with a space); blank lines emit a hard
+/// line break (`\`). Heading-prefixed lines (`## `, `### `, `#### `) always
+/// start a new visual line as bold text.
 fn convert_markdown_to_typst_content(text: &str) -> String {
-    let mut result = String::new();
+    let mut blocks: Vec<String> = Vec::new();
 
-    for line in text.lines() {
-        let trimmed = line.trim_start();
-
-        // Handle markdown headings (#### -> bold text)
-        if let Some(heading_text) = trimmed.strip_prefix("#### ") {
-            result.push_str(&format!("*{}*", escape_typst_minimal(heading_text)));
-            result.push_str("\\\n");
-            continue;
-        } else if let Some(heading_text) = trimmed.strip_prefix("### ") {
-            result.push_str(&format!("*{}*", escape_typst_minimal(heading_text)));
-            result.push_str("\\\n");
-            continue;
-        } else if let Some(heading_text) = trimmed.strip_prefix("## ") {
-            result.push_str(&format!("*{}*", escape_typst_minimal(heading_text)));
-            result.push_str("\\\n");
+    for chunk in text.split("\n\n") {
+        let chunk = chunk.trim();
+        if chunk.is_empty() {
             continue;
         }
-
-        // Convert markdown formatting in the line
-        let converted = convert_markdown_formatting(line);
-        result.push_str(&converted);
-        result.push_str("\\\n");
+        let mut block = String::new();
+        let mut para_buf: Vec<String> = Vec::new();
+        for line in chunk.lines() {
+            let trimmed = line.trim_start();
+            let heading = trimmed
+                .strip_prefix("#### ")
+                .or_else(|| trimmed.strip_prefix("### "))
+                .or_else(|| trimmed.strip_prefix("## "))
+                .map(|t| t.to_string());
+            if let Some(heading) = heading {
+                if !para_buf.is_empty() {
+                    if !block.is_empty() {
+                        block.push_str("\\\n");
+                    }
+                    block.push_str(&convert_markdown_formatting(&para_buf.join(" ")));
+                    para_buf.clear();
+                }
+                if !block.is_empty() {
+                    block.push_str("\\\n");
+                }
+                block.push_str(&format!("*{}*", escape_typst_minimal(&heading)));
+            } else {
+                para_buf.push(line.to_string());
+            }
+        }
+        if !para_buf.is_empty() {
+            if !block.is_empty() {
+                block.push_str("\\\n");
+            }
+            block.push_str(&convert_markdown_formatting(&para_buf.join(" ")));
+        }
+        if !block.is_empty() {
+            blocks.push(block);
+        }
     }
 
-    // Remove trailing line break
-    if result.ends_with("\\\n") {
-        result.truncate(result.len() - 2);
-    }
-
-    result
+    blocks.join("\\\n")
 }
 
 /// Convert markdown bold/italic to Typst formatting

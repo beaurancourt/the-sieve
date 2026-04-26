@@ -476,34 +476,55 @@ fn render_table(table: &Table) -> String {
     output
 }
 
-/// Convert markdown formatting in stat block text to HTML
+/// Convert markdown formatting in stat block text to HTML.
+///
+/// Single newlines are soft (joined with a space, like a markdown paragraph);
+/// blank lines emit a hard line break. Heading-prefixed lines (`### `, `#### `)
+/// always start a new visual line.
 fn render_markdown_text(text: &str) -> String {
-    let mut result = String::new();
+    let mut blocks: Vec<String> = Vec::new();
 
-    for line in text.lines() {
-        let line = line.trim();
-
-        // Handle headings
-        if let Some(heading) = line.strip_prefix("#### ") {
-            result.push_str(&format!("<strong>{}</strong><br>\n", escape_html(heading)));
-            continue;
-        } else if let Some(heading) = line.strip_prefix("### ") {
-            result.push_str(&format!("<strong>{}</strong><br>\n", escape_html(heading)));
+    for chunk in text.split("\n\n") {
+        let chunk = chunk.trim();
+        if chunk.is_empty() {
             continue;
         }
-
-        // Convert **bold** and *italic*
-        let converted = convert_inline_markdown(line);
-        result.push_str(&converted);
-        result.push_str("<br>\n");
+        let mut block = String::new();
+        let mut para_buf: Vec<String> = Vec::new();
+        for line in chunk.lines() {
+            let line = line.trim();
+            let heading = line
+                .strip_prefix("#### ")
+                .or_else(|| line.strip_prefix("### "))
+                .map(|t| t.to_string());
+            if let Some(heading) = heading {
+                if !para_buf.is_empty() {
+                    if !block.is_empty() {
+                        block.push_str("<br>\n");
+                    }
+                    block.push_str(&convert_inline_markdown(&para_buf.join(" ")));
+                    para_buf.clear();
+                }
+                if !block.is_empty() {
+                    block.push_str("<br>\n");
+                }
+                block.push_str(&format!("<strong>{}</strong>", escape_html(&heading)));
+            } else {
+                para_buf.push(line.to_string());
+            }
+        }
+        if !para_buf.is_empty() {
+            if !block.is_empty() {
+                block.push_str("<br>\n");
+            }
+            block.push_str(&convert_inline_markdown(&para_buf.join(" ")));
+        }
+        if !block.is_empty() {
+            blocks.push(block);
+        }
     }
 
-    // Remove trailing <br>
-    if result.ends_with("<br>\n") {
-        result.truncate(result.len() - 5);
-    }
-
-    result
+    blocks.join("<br>\n")
 }
 
 fn convert_inline_markdown(text: &str) -> String {
