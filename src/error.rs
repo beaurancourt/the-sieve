@@ -18,9 +18,6 @@ pub enum SieveError {
     #[error("Failed to parse markdown: {0}")]
     ParseMarkdown(String),
 
-    #[error("Failed to compile Typst document: {0}")]
-    TypstCompile(String),
-
     #[error("Failed to render PDF: {0}")]
     PdfRender(String),
 

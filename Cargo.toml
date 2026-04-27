@@ -10,10 +10,6 @@ pulldown-cmark = "0.10"
 clap = { version = "4", features = ["derive"] }
 thiserror = "1"
 anyhow = "1"
-typst = "0.14"
-typst-pdf = "0.14"
-comemo = "0.4"
-ecow = "0.2"
 
 [profile.release]
 opt-level = 3

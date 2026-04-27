@@ -87,23 +87,6 @@ pub fn convert_markdown_to_html(markdown: &str, base_path: &Path) -> Result<Stri
     Ok(renderer::render_to_html(&document, base_path))
 }
 
-/// Convert markdown content to Typst source
-///
-/// This is useful for debugging or manual Typst editing.
-///
-/// # Arguments
-///
-/// * `markdown` - The markdown content to convert
-/// * `base_path` - Base path for resolving relative image paths
-///
-/// # Returns
-///
-/// Typst source code as a string
-pub fn convert_markdown_to_typst(markdown: &str, base_path: &Path) -> Result<String> {
-    let document = parser::parse(markdown)?;
-    Ok(renderer::render_to_typst(&document, base_path))
-}
-
 /// Parse markdown into the intermediate AST
 ///
 /// Useful for inspection or custom rendering.

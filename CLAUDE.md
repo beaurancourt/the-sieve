@@ -15,34 +15,39 @@ cargo test -p the-sieve <name>   # run a single test by name substring
 cargo run -- <INPUT.md>          # convert a markdown file to PDF
 ```
 
-Common CLI flags (see `src/cli.rs`): `-o OUTPUT`, `-v`, `--html-only` (emit intermediate HTML), `--typst-only` (emit intermediate Typst).
+CLI flags (see `src/cli.rs`): `-o OUTPUT`, `-v`, `--html-only` (emit intermediate HTML).
 
-The default PDF pipeline shells out to `weasyprint`, which must be on `PATH` (`brew install weasyprint` on macOS). Without it, only `--html-only` and `--typst-only` work.
+The PDF pipeline shells out to `weasyprint`, which must be on `PATH` (`brew install weasyprint` on macOS). Without it, only `--html-only` works.
 
 ## Architecture
 
-The pipeline is **markdown → AST → renderer → PDF**, with two interchangeable renderers:
+The pipeline is **markdown → AST → HTML → PDF**:
 
-1. **HTML renderer (default)** — `src/renderer/html.rs`. Emits HTML, then spawns WeasyPrint as a subprocess to produce the PDF. Chosen as the default because WeasyPrint balances multi-column text well.
-2. **Typst renderer** — `src/renderer/typst.rs`. Emits Typst source and compiles it in-process via the embedded `typst` crate (no external dependency). Exposed via `--typst-only` for inspection; `compile_to_pdf` here uses a custom `SieveWorld` implementing Typst's `World` trait to load system fonts and resolve files.
+1. `src/parser/markdown.rs` walks `pulldown-cmark` events into an intermediate `Document` (see `src/ast.rs`).
+2. `src/renderer/html.rs` emits HTML with embedded CSS for half-letter geometry, two-column flow, and TTRPG styling (stat blocks, boxed text, license appendix). It then spawns `weasyprint` as a subprocess to produce the PDF — WeasyPrint was chosen because it balances multi-column text well.
 
-Both renderers consume the same intermediate AST defined in `src/ast.rs` (`Document` → `Element` enum). The library entry points (`convert_markdown_to_pdf`, `convert_markdown_to_html`, `convert_markdown_to_typst`, `parse_markdown`) live in `src/lib.rs`; `src/main.rs` is a thin wrapper that picks an output path based on flags.
+Library entry points (`convert_markdown_to_pdf`, `convert_markdown_to_html`, `parse_markdown`, `compile_html_to_pdf`) live in `src/lib.rs`; `src/main.rs` is a thin wrapper that picks an output path based on flags.
 
-### Parser
+### Parser extensions
 
-`src/parser/markdown.rs` wraps `pulldown-cmark` and walks events into the AST. TTRPG-specific extensions live in `src/parser/extensions.rs`:
+TTRPG-specific syntax lives in `src/parser/extensions.rs`:
 
 - `<!-- pagebreak -->` HTML comments → `Element::PageBreak`
+- `<!-- license: ogl-1.0a -->` and `<!-- license: cc-by-sa-4.0 -->` → `Element::License`. CC-BY-SA accepts optional `attribution="..."` and `changes="..."` parameters that render above the body.
 - Fenced code blocks with language tags `statblock` / `stat-block` / `monster` → `Element::StatBlock` (shaded box)
-- Fenced code blocks with `boxed` / `read-aloud` / `readaloud` → `Element::BoxedText` (read-aloud styling)
+- Fenced code blocks with `boxed` / `read-aloud` / `readaloud` → `Element::BoxedText`
 - Fenced code blocks with `columns` → multi-column layout, with `---` as a column separator
 
-When adding a new extension, the typical change touches all three layers: detect it in `extensions.rs`, add an `Element` variant in `ast.rs`, and render it in **both** `renderer/html.rs` and `renderer/typst.rs` to keep the two pipelines in parity.
+When adding a new extension, the typical change touches three layers: detect it in `extensions.rs`, add an `Element` variant in `ast.rs`, and render it in `renderer/html.rs`.
 
-### Templates
+### Statblock / boxed-text content
 
-`templates/default.typ` is the Typst styling baseline (page geometry, headings, stat-block / boxed-text helpers). The Typst renderer embeds an equivalent preamble inline in `generate_preamble()` rather than loading from disk; if you change `templates/default.typ`, the preamble in `renderer/typst.rs` likely needs the same change.
+Inside a `statblock` or `boxed` fence, single newlines are soft (joined with a space, like a markdown paragraph); a blank line emits a hard `<br>`. Lines starting with `### ` / `#### ` are rendered as bold sub-headings on their own visual line.
+
+### Licenses
+
+`src/licenses.rs` embeds the canonical OGL 1.0a and CC-BY-SA 4.0 texts via `include_str!` from `licenses/*.txt`. The body is parsed into setext-heading and paragraph fragments so that the source files' visual underlines (`====` / `----`) become real headings instead of literal characters in the output.
 
 ### Half-letter output
 
-Page geometry (5.5" × 8.5", two-column, narrow margins) is hardcoded in both the HTML CSS and the Typst preamble — the format is the project's identity, not a parameter.
+Page geometry (5.5" × 8.5", two-column, narrow margins) is hardcoded in the HTML CSS — the format is the project's identity, not a parameter.

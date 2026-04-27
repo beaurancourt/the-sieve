@@ -32,15 +32,11 @@ pipx install weasyprint   # any platform with pipx
 the-sieve adventure.md                 # → adventure.pdf
 the-sieve adventure.md -o booklet.pdf  # custom output path
 the-sieve adventure.md --html-only     # emit intermediate HTML
-the-sieve adventure.md --typst-only    # emit intermediate Typst
 ```
 
 ## How it works
 
-`markdown → AST → renderer → PDF`, with two renderers:
-
-- **HTML → WeasyPrint** (default) — chosen because WeasyPrint balances multi-column text well.
-- **Typst** (in-process, no external dependency) — available via `--typst-only` for inspection.
+`markdown → AST → HTML → WeasyPrint → PDF`. WeasyPrint was chosen for its strong multi-column text balancing, which matters for half-letter booklet layouts.
 
 ## License
 

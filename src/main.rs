@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use the_sieve::cli::{parse_args, Args};
 use the_sieve::error::SieveError;
-use the_sieve::{convert_markdown_to_html, convert_markdown_to_pdf, convert_markdown_to_typst};
+use the_sieve::{convert_markdown_to_html, convert_markdown_to_pdf};
 
 fn main() -> ExitCode {
     let args = parse_args();
@@ -45,20 +45,6 @@ fn run(args: &Args) -> Result<(), SieveError> {
         }
 
         fs::write(&output_path, &html_source).map_err(|e| SieveError::WriteFile {
-            path: output_path.clone(),
-            source: e,
-        })?;
-
-        eprintln!("Created: {}", output_path.display());
-    } else if args.typst_only {
-        // Output intermediate Typst (for debugging)
-        let typst_source = convert_markdown_to_typst(&input_content, &base_path)?;
-
-        if args.verbose {
-            eprintln!("Writing Typst: {}", output_path.display());
-        }
-
-        fs::write(&output_path, &typst_source).map_err(|e| SieveError::WriteFile {
             path: output_path.clone(),
             source: e,
         })?;

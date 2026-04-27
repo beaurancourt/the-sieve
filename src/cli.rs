@@ -27,10 +27,6 @@ pub struct Args {
     /// Output intermediate HTML file instead of PDF
     #[arg(long)]
     pub html_only: bool,
-
-    /// Output intermediate Typst file instead of PDF (for debugging)
-    #[arg(long)]
-    pub typst_only: bool,
 }
 
 impl Args {
@@ -41,8 +37,6 @@ impl Args {
             let mut path = self.input.clone();
             if self.html_only {
                 path.set_extension("html");
-            } else if self.typst_only {
-                path.set_extension("typ");
             } else {
                 path.set_extension("pdf");
             }
