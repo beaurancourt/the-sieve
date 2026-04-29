@@ -183,6 +183,15 @@ li:has(> ol:first-child):has(> ol:last-child) {
   break-inside: avoid;
 }
 
+.stat-block ul {
+  margin: 0.2em 0 0 0;
+  padding-left: 1.2em;
+}
+
+.stat-block li {
+  margin-bottom: 0.1em;
+}
+
 /* Boxed text (read-aloud) styling */
 .boxed-text {
   background-color: #f4f4f0;
@@ -375,7 +384,7 @@ fn render_inlines(inlines: &[Inline]) -> String {
     let mut output = String::new();
     for inline in inlines {
         match inline {
-            Inline::Text(text) => output.push_str(&escape_html(text)),
+            Inline::Text(text) => output.push_str(&escape_html(&apply_typography(text))),
             Inline::Emphasis(inner) => {
                 output.push_str(&format!("<em>{}</em>", render_inlines(inner)));
             }
@@ -480,7 +489,9 @@ fn render_table(table: &Table) -> String {
 ///
 /// Single newlines are soft (joined with a space, like a markdown paragraph);
 /// blank lines emit a hard line break. Heading-prefixed lines (`### `, `#### `)
-/// always start a new visual line.
+/// render as bold sub-headings. Lines starting with `- ` or `* ` become bullet
+/// list items grouped into a `<ul>`; lines continuing a bullet without a marker
+/// are joined to that bullet's text with a space.
 fn render_markdown_text(text: &str) -> String {
     let mut blocks: Vec<String> = Vec::new();
 
@@ -491,34 +502,66 @@ fn render_markdown_text(text: &str) -> String {
         }
         let mut block = String::new();
         let mut para_buf: Vec<String> = Vec::new();
+        let mut bullets: Vec<String> = Vec::new();
+        let mut in_bullets = false;
+
+        let flush_para = |para_buf: &mut Vec<String>, block: &mut String| {
+            if !para_buf.is_empty() {
+                if !block.is_empty() {
+                    block.push_str("<br>\n");
+                }
+                block.push_str(&convert_inline_markdown(&para_buf.join(" ")));
+                para_buf.clear();
+            }
+        };
+        let flush_bullets = |bullets: &mut Vec<String>, block: &mut String| {
+            if !bullets.is_empty() {
+                block.push_str("<ul>");
+                for item in bullets.drain(..) {
+                    block.push_str(&format!("<li>{}</li>", convert_inline_markdown(&item)));
+                }
+                block.push_str("</ul>");
+            }
+        };
+
         for line in chunk.lines() {
             let line = line.trim();
+            let bullet = line
+                .strip_prefix("- ")
+                .or_else(|| line.strip_prefix("* "))
+                .map(str::to_string);
             let heading = line
                 .strip_prefix("#### ")
                 .or_else(|| line.strip_prefix("### "))
-                .map(|t| t.to_string());
-            if let Some(heading) = heading {
-                if !para_buf.is_empty() {
-                    if !block.is_empty() {
-                        block.push_str("<br>\n");
-                    }
-                    block.push_str(&convert_inline_markdown(&para_buf.join(" ")));
-                    para_buf.clear();
+                .map(str::to_string);
+
+            if let Some(item) = bullet {
+                if !in_bullets {
+                    flush_para(&mut para_buf, &mut block);
+                    in_bullets = true;
                 }
+                bullets.push(item);
+            } else if let Some(heading) = heading {
+                flush_para(&mut para_buf, &mut block);
+                flush_bullets(&mut bullets, &mut block);
+                in_bullets = false;
                 if !block.is_empty() {
                     block.push_str("<br>\n");
                 }
                 block.push_str(&format!("<strong>{}</strong>", escape_html(&heading)));
+            } else if in_bullets {
+                // Continuation of the previous bullet item.
+                if let Some(last) = bullets.last_mut() {
+                    last.push(' ');
+                    last.push_str(line);
+                }
             } else {
                 para_buf.push(line.to_string());
             }
         }
-        if !para_buf.is_empty() {
-            if !block.is_empty() {
-                block.push_str("<br>\n");
-            }
-            block.push_str(&convert_inline_markdown(&para_buf.join(" ")));
-        }
+        flush_para(&mut para_buf, &mut block);
+        flush_bullets(&mut bullets, &mut block);
+
         if !block.is_empty() {
             blocks.push(block);
         }
@@ -528,49 +571,86 @@ fn render_markdown_text(text: &str) -> String {
 }
 
 fn convert_inline_markdown(text: &str) -> String {
+    let text = apply_typography(text);
     let mut result = String::new();
     let chars: Vec<char> = text.chars().collect();
     let mut i = 0;
 
     while i < chars.len() {
+        // Backslash escape: \X emits X literally (still HTML-escaped if needed).
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            push_html_char(&mut result, chars[i + 1]);
+            i += 2;
+            continue;
+        }
+
         // Check for ** (bold)
         if i + 1 < chars.len() && chars[i] == '*' && chars[i + 1] == '*' {
             if let Some(end) = find_double_star(&chars, i + 2) {
                 let inner: String = chars[i + 2..end].iter().collect();
-                result.push_str(&format!("<strong>{}</strong>", escape_html(&inner)));
+                result.push_str(&format!("<strong>{}</strong>", process_inline_text(&inner)));
                 i = end + 2;
                 continue;
             }
         }
 
-        // Check for single * (italic)
-        if chars[i] == '*' && (i == 0 || chars[i - 1] != '*') && (i + 1 >= chars.len() || chars[i + 1] != '*') {
+        // Check for single * (italic): isolated star, no `*` on either side.
+        if chars[i] == '*'
+            && (i == 0 || chars[i - 1] != '*')
+            && (i + 1 >= chars.len() || chars[i + 1] != '*')
+        {
             if let Some(end) = find_single_star(&chars, i + 1) {
                 let inner: String = chars[i + 1..end].iter().collect();
-                result.push_str(&format!("<em>{}</em>", escape_html(&inner)));
+                result.push_str(&format!("<em>{}</em>", process_inline_text(&inner)));
                 i = end + 1;
                 continue;
             }
         }
 
-        // Regular character - escape HTML
-        let c = chars[i];
-        match c {
-            '<' => result.push_str("&lt;"),
-            '>' => result.push_str("&gt;"),
-            '&' => result.push_str("&amp;"),
-            '"' => result.push_str("&quot;"),
-            _ => result.push(c),
-        }
+        push_html_char(&mut result, chars[i]);
         i += 1;
     }
 
     result
 }
 
+/// HTML-escape a single character.
+fn push_html_char(out: &mut String, c: char) {
+    match c {
+        '<' => out.push_str("&lt;"),
+        '>' => out.push_str("&gt;"),
+        '&' => out.push_str("&amp;"),
+        '"' => out.push_str("&quot;"),
+        _ => out.push(c),
+    }
+}
+
+/// Process the inside of a bold/italic span: handles backslash escapes and
+/// HTML escapes, but does not recurse into nested emphasis.
+fn process_inline_text(text: &str) -> String {
+    let mut result = String::new();
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            push_html_char(&mut result, chars[i + 1]);
+            i += 2;
+            continue;
+        }
+        push_html_char(&mut result, chars[i]);
+        i += 1;
+    }
+    result
+}
+
 fn find_double_star(chars: &[char], start: usize) -> Option<usize> {
     let mut i = start;
     while i + 1 < chars.len() {
+        // Skip escaped chars: `\*` is not a delimiter.
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            i += 2;
+            continue;
+        }
         if chars[i] == '*' && chars[i + 1] == '*' {
             return Some(i);
         }
@@ -579,10 +659,19 @@ fn find_double_star(chars: &[char], start: usize) -> Option<usize> {
     None
 }
 
+/// Find the next isolated single `*` — i.e. one with no `*` adjacent on
+/// either side. This is what closes an italic span; without the prev-side
+/// check, we'd happily match the second `*` of a nearby `**` pair.
 fn find_single_star(chars: &[char], start: usize) -> Option<usize> {
     let mut i = start;
     while i < chars.len() {
-        if chars[i] == '*' && (i + 1 >= chars.len() || chars[i + 1] != '*') {
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            i += 2;
+            continue;
+        }
+        let prev_ok = i == 0 || chars[i - 1] != '*';
+        let next_ok = i + 1 >= chars.len() || chars[i + 1] != '*';
+        if chars[i] == '*' && prev_ok && next_ok {
             return Some(i);
         }
         i += 1;
@@ -595,6 +684,12 @@ fn escape_html(text: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+}
+
+/// Typographic substitutions for prose. Run *before* HTML escaping so that
+/// `->` is consumed as a unit instead of being split by the `>` escape.
+fn apply_typography(text: &str) -> String {
+    text.replace("->", "\u{2192}")
 }
 
 /// Compile HTML to PDF using WeasyPrint
