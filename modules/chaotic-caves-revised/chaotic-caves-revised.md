@@ -33,7 +33,7 @@ thinking. If someone starts arguing that part "A" doesn't work because it looks
 like it is on the same level as part "B", just tell them the ground slopes up
 or down as needed and get on with playing.
 
-## A. Orc Lair
+## A: Orc Lair
 
 These orcs share (along with those at lair B below) the duty of guarding the
 local orc temple from intruders. They are brash and haughty, prone to cruelty,
@@ -46,7 +46,7 @@ ML 8, XP 25 ea.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 1. Entrance
+### 1: Entrance
 
 Two orcs usually stand guard outside this gaping entranceway, leaning on their
 spears. Others will be inside the first chamber, which is their usual bunk
@@ -57,12 +57,12 @@ room. Each has 1d6 sp.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 2. Empty Room
+### 2: Empty Room
 
 The walls and some of the ceiling of this room collapsed some time ago. It is
 currently unfit to live in.
 
-### 3. Common Room
+### 3: Common Room
 
 These are the quarters of a number of orcs, with their weapons and gear. Each
 has 1d6 sp. Crude furniture is in the center of the room, and wooden bunks line
@@ -74,7 +74,7 @@ meat (12 – 72 pounds each of veggies and meat).
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 4. Wolf Pen
+### 4: Wolf Pen
 
 Both ends of this area are blocked by a wooden fence spanning the complete
 width and height of the halls; in the center of each is a wooden gate about 3'
@@ -90,7 +90,7 @@ littered with wooden bowls full of water, bones, and offal, but nothing else.
 **3 Wolves:** AC 13, HD 2, ATK +2 -> 1d6 (bite), MV 60, SV F2, ML 8, XP 75 ea.
 ```
 
-### 5. Door to Jail
+### 5: Door to Jail
 
 Behind this door are the quarters for the big, sweaty orc who serves as the
 warden of the jail (and also chief torturer) and two assistants. The key to the
@@ -123,7 +123,7 @@ than he is).
 XP 10
 ```
 
-### 6. Chief's Room
+### 6: Chief's Room
 
 The strong, shrewd leader of the orcs resides here, sitting on a large,
 heavily-built throne when judging court. The sub-room to the south contains a
@@ -164,7 +164,7 @@ A stoppered flask in a padded jar contains a **Potion of Passwall** – which
 replicates the effect of the 5th-level Magic-User spell of that name when
 poured onto an appropriate surface.
 
-### 7. Common Room/Guard Room
+### 7: Common Room/Guard Room
 
 Several orcs are housed here as a guard post against those in lair B. Each has
 1d6 sp. The room is cluttered with crude furniture and common foods stuffs,
@@ -176,12 +176,12 @@ ea.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 8. Pools
+### 8: Pools
 
 These pools of water are fed by underground springs. They provide a year-round
 source of fresh water. They are 6' deep and clean, but otherwise not unusual.
 
-### 9. Shared Hallway
+### 9: Shared Hallway
 
 At each end of this hallway is a heavy, thick wooden door bound by strong steel
 bands, with crafty and heavy locks. Each of the orc chiefs (rooms #6 and #13)
@@ -192,7 +192,7 @@ savagely for the affections of the god in the temple that a high priest had the
 doors locked. She gave the keys to the chiefs, with the admonishment that any
 further monkey business was not going to be tolerated.
 
-### 10. Orc Temple
+### 10: Orc Temple
 
 This temple was carefully cut from the living stone and is well-maintained. The
 four pillars are fluted and ornate; the floor is tiled with polished green and
@@ -202,7 +202,7 @@ shining piece of black basalt, standing 12' high. It has two red gems for eyes
 (each worth 250 gp). Steps are not provided for getting atop the dais; no one
 is supposed to stand on it.
 
-## B. Orc Lair
+## B: Orc Lair
 
 These orcs share (with those at lair A above) the duty of guarding the local
 orc temple from intruders. They have a cruel sense of humor. There is a 1-2 on
@@ -230,7 +230,7 @@ sp.
 **Hobgoblin:** AC 14, HD 1, ATK +1 -> 1d8 (scimitar), MV 30, SV F1, ML 8, XP 25
 ```
 
-### 11. Secret Safe Room
+### 11: Secret Safe Room
 
 Only the orc chief in room #13 knows of this secret room. Both of the secret
 doors that enter into it are so well-hidden that even close scrutiny has a low
@@ -241,7 +241,7 @@ bangs away loudly for a minute in the orc chiefs quarters. Stashed in the main
 chamber is a sword, a pouch with 25 gp, food, and flint and steel, a skin of
 water, a cot, and a cloak.
 
-### 12. Guard Post
+### 12: Guard Post
 
 Two orcs with spears and hand axes stand on guard duty at this door. Each has
 1d6 sp. The short corridor between it and the next room provides a buffer zone
@@ -252,7 +252,7 @@ in case of attack.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 13. Chief's Quarters
+### 13: Chief's Quarters
 
 The wily orc chief resides here. A war leader and a couple of common orcs are
 also usually found here.
@@ -288,7 +288,7 @@ chief and/or leader are present), XP 25 ea.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 14. Common Room
+### 14: Common Room
 
 This trash-littered room houses nine orcs. They are currently throwing rocks at
 one who is standing against a wall. Several others are bruised. The game is to
@@ -299,7 +299,7 @@ see who can take the most beating before flinching. Each has 1d6 sp.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-### 15. Common Room
+### 15: Common Room
 
 This room houses seven orcs. It is cluttered by miscellaneous debris that they
 have torn up and discarded, as well as firewood and stone circles for cooking.
@@ -311,7 +311,7 @@ and a foot of earth) is a bag with 10 pp and 400 sp.
 - **light sensitivity**: -1 to attack in bright sunlight or magical light
 ```
 
-## C. Hobgoblin Lair
+## C: Hobgoblin Lair
 
 These hobgoblins have taken over what was going to be an expansion of the
 funeral crypt at D and are renovating it. The interior is a mixture of smooth
@@ -340,7 +340,7 @@ the room, then rushing out to attack).
 25 ea.
 ```
 
-### 16. Trapped Hallway
+### 16: Trapped Hallway
 
 Three sets of pillars help support the 20' high ceiling of this otherwise
 innocuous hallway. The hobgoblins have strung thin wires along the floor
@@ -352,7 +352,7 @@ caught under the net will be tangled for 1d6 rounds and their struggles will
 cause the bells to ring loudly. There is a good chance hobgoblins from room #17
 below will hear the bells and come to investigate.
 
-### 17. Common Room
+### 17: Common Room
 
 Six hobgoblins bunk here. Each has 1d6 sp. They are not wearing armor but will
 don it if given time. They have fixed the place up, and are using what was once
@@ -365,7 +365,7 @@ as hammocks, each worth 50 gp.
 MV 30 armored or 40, SV F1, ML 8, XP 25 ea.
 ```
 
-### 18. Store Room
+### 18: Store Room
 
 Usually this room is locked (but not very well – a Thief could pick either door
 with ease and the doors can be knocked in easily). The chief (in #21) has the
@@ -374,7 +374,7 @@ sacks of grains and potatoes, hanging dried meats, perhaps some hanging "fresh
 meat" in the form of slain foes. Also there are mining tools: picks, chisels,
 hammers, etc.
 
-### 19. Sub-Leader
+### 19: Sub-Leader
 
 This room has been taken over by a skilled and tough hobgoblin, who lives in
 luxury. On the wall are a short bow and two quivers of arrows, as well as other
@@ -386,7 +386,7 @@ the other. He carries the key to this room on a string of hair on his belt.
 MV 30, SV F3, ML 8, XP 145
 ```
 
-### 20. Guard Room
+### 20: Guard Room
 
 The hobgoblins here have piled up rubble in the hallway and stockpiled six
 vials of holy water to fend off the ghouls to the west. Each has 1d6 sp.
@@ -396,7 +396,7 @@ vials of holy water to fend off the ghouls to the west. Each has 1d6 sp.
 25 ea.
 ```
 
-### 21. Chief's Room
+### 21: Chief's Room
 
 This chamber contains the hobgoblin chief and 3 bodyguards. The chief has the
 key to the store room at #18. There is a plain bed, chairs, tables, and other
@@ -416,7 +416,7 @@ XP 360
 while chief is present), XP 25 ea.
 ```
 
-## D. Abandoned Crypts
+## D: Abandoned Crypts
 
 These are the old funeral crypts, which were once going to be expanded at lair
 C. Once highly decorated, the facade to the entrance is now in ruin, with much
@@ -428,7 +428,7 @@ floor and clutters every floor inside.
 In addition to the larger areas, there are five small, rounded alcoves along
 the walls (two east, three west) which contain pedestals for shrines.
 
-### 22. Ghouls
+### 22: Ghouls
 
 Three ghouls lurk here trying to get through the rubble to the hobgoblins in
 #20. They are not interested in skeletons or zombies as a possible food source.
@@ -449,7 +449,7 @@ Three ghouls lurk here trying to get through the rubble to the hobgoblins in
   save is failed, the humanoid dies within a day.
 ```
 
-### 23. Skeletons
+### 23: Skeletons
 
 This space contains six skeletons (three on the east and three on the west).
 They stand like guards stiff at attention, and attack intruders on sight. The
@@ -465,7 +465,7 @@ ea.
   magic.
 ```
 
-### 24. Zombies
+### 24: Zombies
 
 Zombies wait patiently here, under orders to attack and destroy any intruders.
 The area contains empty (old and rotten) or smashed coffins. Amid the splinters
@@ -480,7 +480,7 @@ water and 56 gp.
   magic.
 ```
 
-### 25. Skeletons
+### 25: Skeletons
 
 The skeletons posted here attack on sight.
 
@@ -500,14 +500,14 @@ ea.
   magic.
 ```
 
-## E. Goblin Lair
+## E: Goblin Lair
 
 These goblins are living the simple life and serving as spear fodder for the
 stronger tribes, who aren't above recruiting them (by force) for battles. Their
 crudely tunneled-out warren is dark and dank. Many halls are 6' to 8' wide and
 just as high.
 
-### 26. Guard Post
+### 26: Guard Post
 
 Six goblins hunker here, ready to fight intruders. Each has 1d6 cp. They
 control a net trap which they can drop by jerking on a rope (it covers the trap
@@ -523,7 +523,7 @@ steps out to try to undo the net.
 F1, ML 7, XP 25 ea.
 ```
 
-### 27. Common Room
+### 27: Common Room
 
 The entrance to this room is covered by crude curtains made from rawhide and
 cheap cloth. Inside are seven goblins (they do not have armor) resting on
@@ -535,14 +535,14 @@ common furs. Each has 1d6 cp.
 25 ea.
 ```
 
-### 28. Trap
+### 28: Trap
 
 This pit trap is 10 feet deep and victims take 1d6 damage from falling. The
 covering is cleverly made and tactics like trying to tap for a hollow floor
 require a standard trap-finding check to see if a faint noise is heard, for
 example.
 
-### 29. Goblin Priest
+### 29: Goblin Priest
 
 This old goblin serves as the spiritual adviser for the chief and tribe. He is
 wise, but is also petty and cruel, misguiding anyone for his own profit. In his
@@ -556,7 +556,7 @@ collector). He does not have armor.
 25
 ```
 
-### 30. Common Room/Store Room
+### 30: Common Room/Store Room
 
 Some 11 goblins reside here (they do not have armor). Each has 1d6 cp.
 
@@ -571,7 +571,7 @@ They are carved from rare wood and worth about 25 gp each.
 Large wicker baskets are stacked along the back wall, each filled with wheat
 grain, flour, vegetables, dried meats and other items.
 
-### 31. Goblin Chief Room
+### 31: Goblin Chief Room
 
 The goblin chief and three other goblins inhabit this room. The chief wields a
 **Shortsword +1**. The north, south, and east walls are covered by curtains
@@ -593,7 +593,7 @@ box containing another 472 gp, 178 sp, and 1,234 cp.
 if king is dead or leaves), XP 25 ea.
 ```
 
-## F. Bandit Lair
+## F: Bandit Lair
 
 This lair has two entrances: see locations #32 and #42 on the map. Both are out
 of sight from each other in the woods. The denizens of this lair are bandits.
@@ -603,7 +603,7 @@ if they get a chance. They are allies to those in the abandoned mansion fort
 (see Part Two), but unless interrogated or something odd happens, they will not
 give that away.
 
-### 32. East Entrance
+### 32: East Entrance
 
 Four humans and a dwarf stand guard here; on hot days they take cover just
 inside the cave entrance. They each have a crossbow and a case of bolts which
@@ -621,7 +621,7 @@ covered bowl of hot coals.
 MV 30, SV F1, ML 8, XP 25 ea.
 ```
 
-### 33. Common Room
+### 33: Common Room
 
 Six human fighters are bunked here, amid furniture that is light and easy to
 break down and move, but not very sturdy. Each has 1d6+6 sp on their person.
@@ -633,7 +633,7 @@ Oil is brought in with a wooden cup when needed.
 25 ea.
 ```
 
-### 34. Locked Store Room
+### 34: Locked Store Room
 
 The door to this room is heavy and locked; knocking it in will take some time.
 The deputy to the leader (in room #41) usually has the key. This room contains
@@ -642,7 +642,7 @@ barrels of beer, bags of grains, vegetables, and other sundries can be found. A
 large clay jug holds eight gallons of lantern oil and there are three dozen
 torches.
 
-### 35. Common Room
+### 35: Common Room
 
 Six bandits reside here. Each has 1d6+6 sp on his or her person. The room is
 lit by two common oil lamps (wooden bowls with a notch for a wick). Oil is
@@ -653,7 +653,7 @@ brought in with a wooden cup when needed.
 25 ea.
 ```
 
-### 36. Leader's Room
+### 36: Leader's Room
 
 The bandit leader (a fighter) is here. He wields a **longsword +1**, wears
 **chainmail +1**, and is carrying a shield. Two of his main cronies are also
@@ -679,7 +679,7 @@ F4, ML 8, XP 240
 8, XP 75 ea.
 ```
 
-### 37. Stables
+### 37: Stables
 
 The bandits keep their animals hidden here, taking them out to browse during
 the day. The dotted lines are wooden fences, with gates where needed.
@@ -688,7 +688,7 @@ In the stalls are two riding horses, two mules, and two cows. A wagon, two
 saddles and bridles, and two sets of saddle bags can be found in one corner.
 The wagon also holds several large bags of grain, buckets, and other items.
 
-### 38. Dungeon
+### 38: Dungeon
 
 This is a holding area for captives and anyone the captain wants to throw into
 irons. The captain currently has the keys with him in room #36. The contents of
@@ -714,7 +714,7 @@ bottles of ale in a box.
 
 **Cell "e"** is empty.
 
-### 39. Guard Post
+### 39: Guard Post
 
 Three men are always posted here to guard the main loot, with strict
 instructions as to who to let in. Each has 1d6 + 6 sp on their person. A common
@@ -725,7 +725,7 @@ oil lamp (wooden bowl with wick) provides light.
 ea.
 ```
 
-### 40. Treasure Room
+### 40: Treasure Room
 
 The best loot is stored here behind a strong, locked door. The bandit captain
 in #36 keeps the key. The contents are as follows:
@@ -737,7 +737,7 @@ in #36 keeps the key. The contents are as follows:
 - 1 dress worth 250 gp
 - 3 dresses worth 100 gp each
 
-### 41. Bandit Lieutenant
+### 41: Bandit Lieutenant
 
 These quarters are shared by the bandit leader's deputy and cronies (usually
 the cronies are with the leader, see room #36). The lieutenant is an Elven
@@ -756,7 +756,7 @@ the main room has a wooden jug with a quart of oil.
 30, SV E-T3, ML 8, XP 145
 ```
 
-### 42. West Entrance
+### 42: West Entrance
 
 Four humans and a Halfling stand guard here (on hot days, they are usually
 inside the cave entrance). They have crossbows and a case of bolts which are
@@ -769,12 +769,12 @@ hot coals.
 25 ea.
 ```
 
-## G. Kobold Lair
+## G: Kobold Lair
 
 These creatures were not invited to the region; they arrived like rats smelling
 a dead corpse to chew on. They are tolerated much the same way.
 
-### 43. Guard Post
+### 43: Guard Post
 
 Nine kobolds hunker nervously here. South of them is a locked store room; the
 chief in room #48 has the key. The store room has dried meat, pickled
@@ -785,7 +785,7 @@ vegetables in clay jars, and other supplies.
 ML 6, XP 10 ea.
 ```
 
-### 44. Guards
+### 44: Guards
 
 Seven kobolds lounge on benches and chairs around tables. None have armor.
 
@@ -794,7 +794,7 @@ Seven kobolds lounge on benches and chairs around tables. None have armor.
 ML 6, XP 10 ea.
 ```
 
-### 45. Common Room
+### 45: Common Room
 
 The doors to this room are made of flimsy wooden poles lashed together; they
 can be kicked in or heard through easily. A number of the kobolds (none have
@@ -806,7 +806,7 @@ then).
 ML 6, XP 10 ea.
 ```
 
-### 46. Common Room
+### 46: Common Room
 
 The door to this room is rickety and easily kicked in or listened through. The
 kobolds inside do not have armor. Ordinary rats and mice scurry among the
@@ -817,7 +817,7 @@ litter; some are being cooked on a fire.
 ML 6, XP 10 ea.
 ```
 
-### 47. Trophy Room
+### 47: Trophy Room
 
 This open chamber is decorated by old metal helmets, clothing hung on wooden
 frames like scarecrows, and other items. These are all mementos of opponents
@@ -830,7 +830,7 @@ The secret door (3' wide and 6' high) in the center of the west wall is
 well-hidden and takes careful scrutiny to find. It opens if a careful grip is
 taken on one side and pulled. Only the chief knows it is there.
 
-### 48. Chief's Room
+### 48: Chief's Room
 
 The kobold chief, two bodyguards, and four normal kobolds live here. The chief
 has the key to the store room at #43.
@@ -856,7 +856,7 @@ ML 8 (7 if chief is defeated or leaves the area), XP 25 ea.
 ML 7 (6 if chief and bodyguards are defeated or leave the area), XP 10 ea.
 ```
 
-### 49. Escape Route
+### 49: Escape Route
 
 As shown on the map, a pit trap with stakes (2d6 damage) is some 10' or 20'
 from the entranceway: it is covered by a pretty good false floor, although a
@@ -873,7 +873,7 @@ SV NM, ML 7, XP 10 ea.
 - **poison**: save vs. Poison at +2 or die
 ```
 
-## H. Lizard Man Lair
+## H: Lizard Man Lair
 
 The lizard man lair is located in a swampy area formed where a stream slows
 down, spreads out, and pools in this area. The tunnels of the lair are wet and
@@ -891,7 +891,7 @@ reeds. The bank can rise to a height of 10' or 20' and is occasionally flat.
 Normal inhabitants include crayfish, fish, frogs, beavers, ducks, and other
 animals coming to drink.
 
-### 50. North Entrance
+### 50: North Entrance
 
 Two totem poles flank the rough entrance that has been clawed into the hard,
 rocky ground. Each is capped with the bleached skull of a bear and feathers.
@@ -914,11 +914,11 @@ hallway and packed with mud to prevent flooding.
 7, XP 145
 ```
 
-### 51. Empty Chamber
+### 51: Empty Chamber
 
 An empty chamber, stacked with firewood, dry grass for tinder, and rocks.
 
-### 52. Common Room
+### 52: Common Room
 
 The residence of three males; they are unarmored.
 
@@ -930,14 +930,14 @@ The residence of three males; they are unarmored.
   are able to employ this maneuver, lizard men surprise on a 4-in-6.
 ```
 
-### 53. Larder (Food Storage)
+### 53: Larder (Food Storage)
 
 These two chambers are separated from each other and the hallway by reed walls
 some 3 feet high. The pool of water in the westward one is 2 feet deep and
 contains fish, eels, crawdads, and other such creatures, while the other has
 turtles, lizards, and rabbits.
 
-### 54. Main Harem
+### 54: Main Harem
 
 The leader of the lizard men (wearing armor of tough hide and bone) resides
 here with two prime female mates who are statistically indistinguishable from
@@ -999,7 +999,7 @@ magic.
   are able to employ this maneuver, lizard men surprise on a 4-in-6.
 ```
 
-### 55. Common Room
+### 55: Common Room
 
 Three males are busy here, readying simple bamboo gigs for a fish-and-frog
 hunt.
@@ -1012,7 +1012,7 @@ hunt.
   are able to employ this maneuver, lizard men surprise on a 4-in-6.
 ```
 
-### 56. Guard Post
+### 56: Guard Post
 
 Three lizard men (wearing tough hide and bone armor) and a giant gecko lizard
 on a thick fiber rope lurk in the dark here, keeping intruders (including
@@ -1033,20 +1033,20 @@ and packed with mud to prevent flooding.
 7, XP 145
 ```
 
-### 57. South Entrance
+### 57: South Entrance
 
 This entrance opens into the bank of the stream, which is some 20 feet high
 here. It is flanked by two 9-foot totem poles (featuring crude animals and
 lizards) capped by bear skulls and feathers.
 
-## I. Bugbear Lair
+## I: Bugbear Lair
 
 These bugbears are planning a takeover of the region. For now they are biding
 their time and waiting for an opportunity. Heavy wooden beams support the
 ceilings of the halls of their lair, tunneled from the loose, rocky earth by
 skilled hands. Most ceilings are 15 feet high.
 
-### 58. Entrance
+### 58: Entrance
 
 Two bugbears with pole arms stand outside the entranceway, one on each side.
 Another is in the niche inside. Each carries 1d6 gp.
@@ -1058,14 +1058,14 @@ XP 145 ea.
   on a 3-in-6
 ```
 
-### 59. Swinging Arm Trap
+### 59: Swinging Arm Trap
 
 Both ends of this hall are protected by a trap. A swinging frame set with
 sharp, hard wooden spikes slashes out when a pressure plate is stepped on,
 attacking as a 2 HD monster and doing 2d6 points of damage to each person hit.
 Each person in front might be hit.
 
-### 60. Store Room
+### 60: Store Room
 
 The door to this room is open. Just inside is a tarp hanging down to prevent
 light from getting in or out, or so it might seem. The tarp has been carefully
@@ -1082,7 +1082,7 @@ other items.
   Each patch can emit a cloud of spores once per day.
 ```
 
-### 61. Common Room
+### 61: Common Room
 
 Three bugbears reside here. Each has 1d6 gp on its person. The east wall is
 decorated with three long strips of cheap paper scattered with bugbear
@@ -1096,12 +1096,12 @@ XP 145 ea.
   on a 3-in-6
 ```
 
-### 62. Empty Common Room
+### 62: Empty Common Room
 
 This room has benches and tables stacked on the north wall and bunks and boxes
 on the south wall. It is empty.
 
-### 63. Secret Door
+### 63: Secret Door
 
 This secret door is well hidden; it only opens when a block in the ceiling
 overhead is gripped and pulled down (it swings up; the latch is reset when it
@@ -1111,7 +1111,7 @@ The prison and main treasure room are hidden to help throw off would-be
 rescuers or plunderers. Captives are blindfolded before entering or exiting
 this area to keep it secret.
 
-### 64. Treasure Room
+### 64: Treasure Room
 
 The door is extremely strong and locked by a high-quality lock (the chief in
 room #68 has the key). Tucked away on one side of the door frame is a small
@@ -1126,7 +1126,7 @@ The room contains chests, boxes, and barrels. Inside one chest is a **Shield
 +1**, a **Potion of Gaseous Form**, and a **Potion of Healing**. A bag holds
 500 gp, 1,400 ep, and 200 cp.
 
-### 65. Prison
+### 65: Prison
 
 The head jailer is usually in and around "e", along with an assistant. Each has
 3d6 gp on his person. The heavy wooden doors to cells "a" to "d" are locked,
@@ -1145,7 +1145,7 @@ Cells "a" and "d" are empty. "b" holds a desperate merchant who will pay 200 gp
 in thanks if returned to town. "c" has two completely harmless skeletons of
 humans or elves.
 
-### 66. Common Room
+### 66: Common Room
 
 Three bugbears reside here. Each has 1d6 gp on its person. The room is
 furnished with common rattan furniture (tables and chairs) and heavy wooden
@@ -1158,7 +1158,7 @@ XP 145 ea.
   on a 3-in-6
 ```
 
-### 67. Owlbear
+### 67: Owlbear
 
 Listening to this door will reveal a grunting, snuffling noise. Chained to the
 east wall inside is a great owlbear, captured as a cub and raised by the
@@ -1176,7 +1176,7 @@ MV 40, SV F5, ML 9, XP 360
 - **surprise**: while in their native territory, surprises in a 4-in-6
 ```
 
-### 68. Main Boss
+### 68: Main Boss
 
 The head bugbear and a small guard of common bugbears reside here, amid heavy
 wooden beds, chairs, and tables. The chief has a necklace with 300 gp on it;
@@ -1199,14 +1199,14 @@ iron-bound, but the room it opens into is empty.
   on a 3-in-6
 ```
 
-## J. Gnoll Lair
+## J: Gnoll Lair
 
 These gnolls have been brought here by the scent of loot and fresh meat.
 
 They are armed with wide-bladed, heavy swords of their own making; others who
 wish to wield them must have at least 12 Strength to do so.
 
-### 69. Entrance
+### 69: Entrance
 
 This entranceway seems to be unguarded. A dead goblin and two dead bugbears lie
 sprawled just outside it. They have been dead for several days and have not
@@ -1221,7 +1221,7 @@ door, gnolls exit the door and attack. Those at #71 will remain in reserve and
 make crafty use of the well-concealed secret door to come out behind opponents
 and attack if they can.
 
-### 70. Guard Post
+### 70: Guard Post
 
 Three gnolls wait here – one is on duty at the corner at the area marked "w"
 (along with the one from room #71) and will alert the rest of those in this
@@ -1235,7 +1235,7 @@ sections of a large tree have been carved into crude benches. Each gnoll has
 ea.
 ```
 
-### 71. Guard Post
+### 71: Guard Post
 
 Three gnolls wait here – one is on duty at the corner at the area marked "w"
 (along with the one from room #70) and will alert the ones in this room if
@@ -1246,7 +1246,7 @@ intruders are spotted. They have shabby furniture. Each gnoll has 1d6 ep.
 75 ea.
 ```
 
-### 72. Common Room
+### 72: Common Room
 
 A group of gnolls lounge in this room, often bored and bickering. A pet wolf is
 tied by rope to the northwest corner, fed scraps, and trained as both guard and
@@ -1263,12 +1263,12 @@ ML 8, XP 75 ea.
 **Wolf:** AC 13, HD 2, ATK +2 -> 1d6 (bite), MV 60, SV F2, ML 8, XP 75
 ```
 
-### 73. Cavern
+### 73: Cavern
 
 This natural cavern is divided by stone columns. There is nothing here,
 although the dripping of water provides some pools of clean drinking water.
 
-### 74. Leader's Room
+### 74: Leader's Room
 
 The gnoll leader resides here along with two mates. The leader wields a
 **Battle Axe +1** and fights fiercely. It wears a golden necklace with gems
@@ -1309,13 +1309,13 @@ MV 20 (40' web), SV F3, ML 8, XP 175
 - **poison**: save vs. Poison at a penalty of -2 or die
 ```
 
-### 75. Storeroom
+### 75: Storeroom
 
 The door is locked and the gnoll leader in room #74 has the key. Barrels,
 boxes, and bags are crammed into this store room. Most contain food or cheap
 ale.
 
-### 76. Dungeon
+### 76: Dungeon
 
 A gnoll is on guard with the key (it has 1d6 ep). Captives being kept for
 ransom are held here. The cell "doors" are made of thick wooden bars with an
