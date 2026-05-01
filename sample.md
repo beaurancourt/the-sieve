@@ -33,17 +33,13 @@ challenge: 7
 
 The tunnel opens into a large cavern lit by a smoky fire pit in the center. Here, the goblin boss holds court with his minions.
 
-```columns
 ### West Side
 
 The western wall has several crude bedrolls and a pile of stolen goods: farming tools, a few coins, and some rotting food.
 
----
-
 ### East Side
 
 The eastern wall features a raised platform where the goblin boss sits on a makeshift throne of bones and leather.
-```
 
 ## The Goblin Boss
 

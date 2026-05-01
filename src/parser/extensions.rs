@@ -61,8 +61,7 @@ pub fn parse_boxed_text(content: &str) -> String {
     content.trim().to_string()
 }
 
-/// Parse columns from content separated by ---
-/// Parse image attributes from markdown image syntax
+/// Parse image attributes from markdown image syntax.
 /// Supports: ![alt](path){width=50%}
 pub fn parse_image_attributes(alt: &str, url: &str, title: Option<&str>) -> Image {
     let mut width = None;

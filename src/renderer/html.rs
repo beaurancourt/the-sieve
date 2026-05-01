@@ -30,7 +30,13 @@ pub fn render_to_html(document: &Document, _base_path: &Path) -> String {
                 }
             }
             Element::PageBreak => {
+                // Close the column container so the break property attaches at
+                // top level — WeasyPrint is unreliable about honoring
+                // `break-after: page` on a zero-height block inside multicolumn.
+                let column_class = if in_single_column { "single-column" } else { "two-column" };
+                output.push_str("</div>\n");
                 output.push_str("<div class=\"page-break\"></div>\n");
+                output.push_str(&format!("<div class=\"content {}\">\n", column_class));
             }
             Element::License { kind, info } => {
                 // Close the current column flow so `break-before: page` on the
@@ -268,6 +274,7 @@ hr {
 /* Page break */
 .page-break {
   break-after: page;
+  page-break-after: always;
 }
 
 /* License page */

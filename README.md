@@ -6,7 +6,7 @@ A CLI tool that converts TTRPG-flavored markdown into half-letter (5.5" × 8.5")
 
 - **Stat blocks** via fenced code blocks (`` ```statblock ``)
 - **Boxed read-aloud text** (`` ```boxed ``)
-- **Multi-column layouts** (`` ```columns `` with `---` separators)
+- **Single-column override** (`<!-- 1-column -->` / `<!-- 2-column -->`)
 - **Manual page breaks** (`<!-- pagebreak -->`)
 - Standard markdown: headings, lists, tables, images, emphasis
 

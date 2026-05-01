@@ -142,9 +142,9 @@ The default layout is two columns, optimized for half-letter booklets. You can
 switch to single-column for title pages, full-width content, or large
 illustrations.
 
-### Switching to Single Column
-
 <!-- 1-column -->
+
+### Switching to Single Column
 
 Use `<!-- 1-column -->` to switch to single-column layout. This is useful for:
 
@@ -156,14 +156,13 @@ Use `<!-- 1-column -->` to switch to single-column layout. This is useful for:
 This paragraph spans the full page width, making it easier to read longer
 content or display wide images.
 
-### Switching Back to Two Columns
-
-Use `<!-- 2-column -->` to return to the standard two-column layout:
-
 <!-- 2-column -->
 
-Now we're back to two columns. The text flows normally again, optimized for the
-half-letter format. Most adventure content works best in two columns.
+### Switching Back to Two Columns
+
+Use `<!-- 2-column -->` to return to the standard two-column layout. We're back
+to two columns now. The text flows normally again, optimized for the half-letter
+format — most adventure content works best in two columns.
 
 ## Special Characters
 
@@ -203,19 +202,10 @@ Infravision 60' Save: F0, Morale: 7
 
 #### Area 2: Common Room
 
-```columns
-### Western Alcove
-
-Sleeping pallets for six goblins. A search reveals a hidden pouch with 15 gp
-under one mattress.
-
----
-
-### Eastern Alcove
-
-Food storage—mostly rotting meat and stolen vegetables. A cask of surprisingly
+Sleeping pallets for six goblins line the western wall. A search reveals a
+hidden pouch with 15 gp under one mattress. The eastern wall holds food
+storage — mostly rotting meat and stolen vegetables, plus a cask of surprisingly
 decent ale (worth 5 gp intact).
-```
 
 #### Area 3: Chief's Chamber
 
@@ -226,6 +216,10 @@ bodyguards.
 **Goblin Chief** — HD 2 (12 HP), AC 5 [14], MV 30', Atk: Morningstar 1d6+1 or
 Javelin 1d4 (30'), Special: Infravision 60', Bully (nearby goblins +1 morale),
 Save: F2, Morale: 8
+
+
+**2 Bodyguards** — HD 1+1, AC 6 [13], MV 30', Atk: Spear 1d6, Special:
+Infravision 60', Save: F2, Morale: 6 (7 with Chief)
 ```
 
 **Treasure:** Chief wears a gold chain (75 gp), carries a pouch with 30 gp, and

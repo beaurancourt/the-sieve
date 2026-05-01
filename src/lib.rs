@@ -7,7 +7,7 @@
 //!
 //! - **Stat blocks**: D&D 5e-style monster/NPC stat blocks
 //! - **Boxed text**: Read-aloud text with distinct styling
-//! - **Columns**: Multi-column layouts
+//! - **Layout switching**: `<!-- 1-column -->` / `<!-- 2-column -->` directives
 //! - **Page breaks**: Explicit page break control
 //! - **Half-letter format**: 5.5" x 8.5" for booklet printing
 //!

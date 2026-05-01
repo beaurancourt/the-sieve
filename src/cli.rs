@@ -8,7 +8,7 @@ use std::path::PathBuf;
     version,
     about = "Convert TTRPG markdown to half-letter PDFs for booklet printing",
     long_about = "The Sieve converts markdown documents with TTRPG-specific extensions
-(stat blocks, boxed read-aloud text, columns) into professionally typeset
+(stat blocks, boxed read-aloud text, layout switching) into professionally typeset
 PDFs sized for half-letter (5.5\" x 8.5\") booklet printing."
 )]
 pub struct Args {

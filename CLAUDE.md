@@ -36,7 +36,7 @@ TTRPG-specific syntax lives in `src/parser/extensions.rs`:
 - `<!-- license: ogl-1.0a -->` and `<!-- license: cc-by-sa-4.0 -->` → `Element::License`. CC-BY-SA accepts optional `attribution="..."` and `changes="..."` parameters that render above the body.
 - Fenced code blocks with language tags `statblock` / `stat-block` / `monster` → `Element::StatBlock` (shaded box)
 - Fenced code blocks with `boxed` / `read-aloud` / `readaloud` → `Element::BoxedText`
-- Fenced code blocks with `columns` → multi-column layout, with `---` as a column separator
+- `<!-- 1-column -->` / `<!-- 2-column -->` HTML comments switch the page layout (the default is two-column)
 
 When adding a new extension, the typical change touches three layers: detect it in `extensions.rs`, add an `Element` variant in `ast.rs`, and render it in `renderer/html.rs`.
 
