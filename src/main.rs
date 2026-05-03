@@ -17,7 +17,6 @@ fn main() -> ExitCode {
 }
 
 fn run(args: &Args) -> Result<(), SieveError> {
-    // Read input file
     let input_content = fs::read_to_string(&args.input).map_err(|e| SieveError::ReadFile {
         path: args.input.clone(),
         source: e,
@@ -27,9 +26,8 @@ fn run(args: &Args) -> Result<(), SieveError> {
         eprintln!("Reading: {}", args.input.display());
     }
 
-    // Get the base path for resolving relative paths. `Path::parent` returns
-    // `Some("")` for a bare filename like `FOO.md`, which then breaks
-    // `Command::current_dir("")` downstream — fall back to CWD in that case.
+    // `Path::parent` returns `Some("")` for a bare filename like `FOO.md`;
+    // fall back to CWD so image-path resolution doesn't break.
     let base_path = args
         .input
         .parent()
@@ -40,7 +38,6 @@ fn run(args: &Args) -> Result<(), SieveError> {
     let output_path = args.output_path();
 
     if args.html_only {
-        // Output intermediate HTML
         let html_source = convert_markdown_to_html(&input_content, &base_path)?;
 
         if args.verbose {
@@ -54,9 +51,8 @@ fn run(args: &Args) -> Result<(), SieveError> {
 
         eprintln!("Created: {}", output_path.display());
     } else {
-        // Generate PDF using WeasyPrint
         if args.verbose {
-            eprintln!("Generating PDF via WeasyPrint...");
+            eprintln!("Generating PDF...");
         }
 
         let pdf_data = convert_markdown_to_pdf(&input_content, &base_path)?;
