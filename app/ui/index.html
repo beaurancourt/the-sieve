@@ -34,6 +34,7 @@
     border: 1px solid #888;
     border-radius: 4px;
     background: #f5f5f5;
+    color: #222;
   }
   button:hover { background: #eaeaea; }
   button:disabled {
@@ -44,6 +45,7 @@
     font-size: 13px;
     padding: 8px 12px;
     background: #f5f5f5;
+    color: #444;
     border-radius: 4px;
     margin-bottom: 12px;
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -51,6 +53,21 @@
   }
   .status.idle { color: #666; }
   .status.watching { color: #060; }
+
+  @media (prefers-color-scheme: dark) {
+    button {
+      background: #2d2d2d;
+      color: #eaeaea;
+      border-color: #555;
+    }
+    button:hover { background: #3a3a3a; }
+    .status {
+      background: #2d2d2d;
+      color: #ccc;
+    }
+    .status.idle { color: #999; }
+    .status.watching { color: #6a9955; }
+  }
   .log {
     flex: 1;
     background: #1e1e1e;
