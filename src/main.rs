@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use the_sieve::cli::{parse_args, Args};
 use the_sieve::error::SieveError;
-use the_sieve::{convert_markdown_to_html, convert_markdown_to_pdf};
+use the_sieve::{convert_markdown_to_html, convert_markdown_to_pdf, convert_markdown_to_pdf_native};
 
 fn main() -> ExitCode {
     let args = parse_args();
@@ -54,12 +54,19 @@ fn run(args: &Args) -> Result<(), SieveError> {
 
         eprintln!("Created: {}", output_path.display());
     } else {
-        // Generate PDF using WeasyPrint
         if args.verbose {
-            eprintln!("Generating PDF via WeasyPrint...");
+            if args.native {
+                eprintln!("Generating PDF via native renderer (krilla+parley)...");
+            } else {
+                eprintln!("Generating PDF via WeasyPrint...");
+            }
         }
 
-        let pdf_data = convert_markdown_to_pdf(&input_content, &base_path)?;
+        let pdf_data = if args.native {
+            convert_markdown_to_pdf_native(&input_content, &base_path)?
+        } else {
+            convert_markdown_to_pdf(&input_content, &base_path)?
+        };
 
         if args.verbose {
             eprintln!("Writing PDF: {}", output_path.display());

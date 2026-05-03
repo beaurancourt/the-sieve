@@ -109,3 +109,11 @@ pub fn parse_markdown(markdown: &str) -> Result<Document> {
 pub fn compile_html_to_pdf(html: &str, base_path: &Path) -> Result<Vec<u8>> {
     renderer::compile_to_pdf(html, base_path)
 }
+
+/// Convert markdown to PDF using the native (krilla+parley) renderer.
+/// Experimental — see `renderer::pdf` for current feature coverage.
+pub fn convert_markdown_to_pdf_native(markdown: &str, base_path: &Path) -> Result<Vec<u8>> {
+    let document = parser::parse(markdown)?;
+    renderer::pdf::render(&document, base_path)
+        .map_err(|e| SieveError::PdfRender(e.to_string()))
+}
