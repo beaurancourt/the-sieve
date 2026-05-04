@@ -140,6 +140,14 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
             }
         }
 
+        draw_page_number(
+            &mut surface,
+            page_index + 1,
+            &mut font_cx,
+            &mut layout_cx,
+            &mut font_cache,
+        );
+
         surface.finish();
         page.finish();
         page_index += 1;
@@ -1241,6 +1249,42 @@ fn draw_table(
     }
 
     surface.set_stroke(None);
+}
+
+/// Draw a 1-based page number in the bottom margin. Odd pages get the number
+/// in the bottom-right; even pages in the bottom-left — the standard book
+/// convention so numbers face outward when bound.
+fn draw_page_number(
+    surface: &mut Surface,
+    page_num: usize,
+    font_cx: &mut FontContext,
+    layout_cx: &mut LayoutContext<rgb::Color>,
+    font_cache: &mut HashMap<u64, Font>,
+) {
+    let text = page_num.to_string();
+    let size = 8.0;
+    let max_advance = PAGE_W - 2.0 * MARGIN_X;
+    let mut layout = build_layout(
+        font_cx,
+        layout_cx,
+        &text,
+        max_advance,
+        size,
+        FontWeight::NORMAL,
+        FontStyle::Normal,
+        &[],
+    );
+    let alignment = if page_num % 2 == 1 {
+        ParleyAlign::Right
+    } else {
+        ParleyAlign::Start
+    };
+    layout.align(Some(max_advance), alignment, AlignmentOptions::default());
+
+    // Vertically center the number in the bottom margin band.
+    let layout_h = layout.height();
+    let y = PAGE_H - MARGIN_Y + (MARGIN_Y - layout_h) / 2.0;
+    draw_layout(surface, &layout, MARGIN_X, y, &text, font_cache);
 }
 
 fn stroke_horizontal_line(
