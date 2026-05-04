@@ -6,7 +6,6 @@ A small window that lets you pick a markdown file and rebuilds the PDF every tim
 | File | Platform |
 |---|---|
 | **`The Sieve_<version>_aarch64.dmg`** | macOS — Apple Silicon (M1 / M2 / M3 / M4) |
-| **`The Sieve_<version>_x64.dmg`** | macOS — Intel |
 | **`the-sieve-app_<version>_amd64.AppImage`** | Linux — universal (run `chmod +x` then double-click) |
 | **`the-sieve-app_<version>_amd64.deb`** | Debian / Ubuntu |
 | **`The Sieve_<version>_x64-setup.exe`** | Windows — recommended installer (NSIS) |
@@ -18,7 +17,6 @@ For terminal users and scripting. `the-sieve <input.md>` converts markdown into 
 | File | Platform |
 |---|---|
 | **`the-sieve-aarch64-apple-darwin`** | macOS — Apple Silicon |
-| **`the-sieve-x86_64-apple-darwin`** | macOS — Intel |
 | **`the-sieve-x86_64-unknown-linux-gnu`** | Linux |
 | **`the-sieve-x86_64-pc-windows-msvc.exe`** | Windows |
 
