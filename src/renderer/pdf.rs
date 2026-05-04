@@ -82,9 +82,11 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
     // Pass 2: pack tracks onto pages.
     let mut document = KrillaDocument::new();
     let mut font_cache: HashMap<u64, Font> = HashMap::new();
+    let mut headings: Vec<HeadingRecord> = Vec::new();
 
     let mut tracks: VecDeque<Track> = tracks.into();
     let mut emit_empty_page = tracks.is_empty();
+    let mut page_index: usize = 0;
 
     while !tracks.is_empty() || emit_empty_page {
         emit_empty_page = false;
@@ -116,6 +118,8 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
                     &mut y,
                     available,
                     &mut font_cache,
+                    page_index,
+                    &mut headings,
                 ),
                 _ => place_double_track(
                     &mut track,
@@ -123,6 +127,8 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
                     &mut y,
                     available,
                     &mut font_cache,
+                    page_index,
+                    &mut headings,
                 ),
             };
             if !placed {
@@ -136,10 +142,64 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
 
         surface.finish();
         page.finish();
+        page_index += 1;
+    }
+
+    if !headings.is_empty() {
+        document.set_outline(build_outline(&headings));
     }
 
     document.finish().map_err(|e| anyhow!("{e:?}"))
 }
+
+/// One heading captured during the pack pass — used to build a PDF outline
+/// (the bookmarks tree shown in PDF viewer sidebars).
+struct HeadingRecord {
+    level: u8,
+    text: String,
+    page_index: usize,
+    /// Top-left target point on the page (top of the heading line).
+    x: f32,
+    y: f32,
+}
+
+fn build_outline(records: &[HeadingRecord]) -> krilla::outline::Outline {
+    use krilla::destination::XyzDestination;
+    use krilla::geom::Point;
+    use krilla::outline::{Outline, OutlineNode};
+
+    let mut outline = Outline::new();
+    // Stack of in-progress (level, node) pairs. We pop into the parent (or
+    // outline root if no parent) when a heading at the same or shallower level
+    // arrives, then push the new heading.
+    let mut stack: Vec<(u8, OutlineNode)> = Vec::new();
+
+    let close_to = |stack: &mut Vec<(u8, OutlineNode)>,
+                    outline: &mut Outline,
+                    until_level: u8| {
+        while stack
+            .last()
+            .map(|(l, _)| *l >= until_level)
+            .unwrap_or(false)
+        {
+            let (_, node) = stack.pop().unwrap();
+            match stack.last_mut() {
+                Some((_, parent)) => parent.push_child(node),
+                None => outline.push_child(node),
+            }
+        }
+    };
+
+    for r in records {
+        close_to(&mut stack, &mut outline, r.level);
+        let dest = XyzDestination::new(r.page_index, Point::from_xy(r.x, r.y));
+        stack.push((r.level, OutlineNode::new(r.text.clone(), dest)));
+    }
+    // Drain any remaining open nodes.
+    close_to(&mut stack, &mut outline, 0);
+    outline
+}
+
 
 /// A run of blocks with a single column count plus an optional trailing page
 /// break. Tracks come from `build_tracks` and are consumed at pack time.
@@ -172,6 +232,9 @@ enum LaidOut {
         /// overflows. Headings, license titles, list-item placeholders are
         /// non-splittable.
         splittable: bool,
+        /// If this is a heading (1-4), record so we can emit a PDF outline
+        /// entry pointing at it.
+        heading_level: Option<u8>,
     },
     Rule {
         height: f32,
@@ -462,6 +525,37 @@ fn make_block(
     top_margin: f32,
     splittable: bool,
 ) -> LaidOut {
+    make_block_inner(layout, text, indent, space_after, top_margin, splittable, None)
+}
+
+fn make_heading_block(
+    layout: Layout<rgb::Color>,
+    text: String,
+    indent: f32,
+    space_after: f32,
+    top_margin: f32,
+    level: u8,
+) -> LaidOut {
+    make_block_inner(
+        layout,
+        text,
+        indent,
+        space_after,
+        top_margin,
+        false,
+        Some(level),
+    )
+}
+
+fn make_block_inner(
+    layout: Layout<rgb::Color>,
+    text: String,
+    indent: f32,
+    space_after: f32,
+    top_margin: f32,
+    splittable: bool,
+    heading_level: Option<u8>,
+) -> LaidOut {
     let line_end = layout.len();
     LaidOut::Block {
         height: layout.height(),
@@ -474,6 +568,7 @@ fn make_block(
         line_start: 0,
         line_end,
         splittable,
+        heading_level,
     }
 }
 
@@ -509,6 +604,8 @@ fn place_single_track(
     y_cursor: &mut f32,
     available: f32,
     font_cache: &mut HashMap<u64, Font>,
+    page_index: usize,
+    headings: &mut Vec<HeadingRecord>,
 ) -> bool {
     let column_top = *y_cursor;
     let final_y = pack_into_column(
@@ -518,6 +615,8 @@ fn place_single_track(
         column_top,
         available,
         font_cache,
+        page_index,
+        headings,
     );
     *y_cursor = if track.blocks.is_empty() {
         final_y
@@ -538,6 +637,8 @@ fn pack_into_column(
     column_top: f32,
     available: f32,
     font_cache: &mut HashMap<u64, Font>,
+    page_index: usize,
+    headings: &mut Vec<HeadingRecord>,
 ) -> f32 {
     let mut y = column_top;
     while !blocks.is_empty() {
@@ -553,7 +654,7 @@ fn pack_into_column(
             match try_split_block(block, remaining) {
                 Ok((top, bottom)) => {
                     let advance = block_height(&top) + block_space_after(&top);
-                    draw_block(&top, surface, column_x, draw_y, font_cache);
+                    draw_block(&top, surface, column_x, draw_y, font_cache, page_index, headings);
                     y = draw_y + advance;
                     if let Some(bottom) = bottom {
                         blocks.insert(0, bottom);
@@ -564,7 +665,7 @@ fn pack_into_column(
                     if at_top {
                         // Can't split and can't move — overflow it.
                         let advance = block_height(&original) + block_space_after(&original);
-                        draw_block(&original, surface, column_x, draw_y, font_cache);
+                        draw_block(&original, surface, column_x, draw_y, font_cache, page_index, headings);
                         y = draw_y + advance;
                     } else {
                         blocks.insert(0, original);
@@ -575,7 +676,7 @@ fn pack_into_column(
         } else {
             let block = blocks.remove(0);
             let advance = block_height(&block) + block_space_after(&block);
-            draw_block(&block, surface, column_x, draw_y, font_cache);
+            draw_block(&block, surface, column_x, draw_y, font_cache, page_index, headings);
             y = draw_y + advance;
         }
     }
@@ -615,6 +716,7 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
         line_start,
         line_end,
         splittable,
+        heading_level,
     } = block
     else {
         return Err(block);
@@ -632,6 +734,7 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
             line_start,
             line_end,
             splittable,
+            heading_level,
         });
     }
 
@@ -657,6 +760,7 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
             line_start,
             line_end,
             splittable,
+            heading_level,
         });
     }
     if k >= line_end {
@@ -673,6 +777,7 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
                 line_start,
                 line_end,
                 splittable,
+                heading_level,
             },
             None,
         ));
@@ -691,6 +796,7 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
         line_start,
         line_end: k,
         splittable,
+        heading_level,
     };
     let bottom = LaidOut::Block {
         layout,
@@ -703,6 +809,9 @@ fn try_split_block(block: LaidOut, available: f32) -> Result<(LaidOut, Option<La
         line_start: k,
         line_end,
         splittable,
+        // Outline entry only points at the first piece; continuation isn't a
+        // separate heading.
+        heading_level: None,
     };
     Ok((top, Some(bottom)))
 }
@@ -717,6 +826,8 @@ fn place_double_track(
     y_cursor: &mut f32,
     available: f32,
     font_cache: &mut HashMap<u64, Font>,
+    page_index: usize,
+    headings: &mut Vec<HeadingRecord>,
 ) -> bool {
     let n = track.blocks.len();
     if n == 0 {
@@ -759,10 +870,24 @@ fn place_double_track(
         if k == 0 {
             k = 1;
         }
-        let col0_y_after =
-            place_blocks_into_column(&track.blocks[0..k], surface, col0_x, track_top, font_cache);
-        let col1_y_after =
-            place_blocks_into_column(&track.blocks[k..], surface, col1_x, track_top, font_cache);
+        let col0_y_after = place_blocks_into_column(
+            &track.blocks[0..k],
+            surface,
+            col0_x,
+            track_top,
+            font_cache,
+            page_index,
+            headings,
+        );
+        let col1_y_after = place_blocks_into_column(
+            &track.blocks[k..],
+            surface,
+            col1_x,
+            track_top,
+            font_cache,
+            page_index,
+            headings,
+        );
         track.blocks.clear();
         let track_height = (col0_y_after - track_top).max(col1_y_after - track_top);
         *y_cursor = track_top + track_height;
@@ -771,9 +896,27 @@ fn place_double_track(
 
     // Overflow / oversized-block case: greedy column 0, then column 1, with
     // paragraph splitting at line boundaries when a block doesn't fit whole.
-    pack_into_column(&mut track.blocks, surface, col0_x, track_top, available, font_cache);
+    pack_into_column(
+        &mut track.blocks,
+        surface,
+        col0_x,
+        track_top,
+        available,
+        font_cache,
+        page_index,
+        headings,
+    );
     if !track.blocks.is_empty() {
-        pack_into_column(&mut track.blocks, surface, col1_x, track_top, available, font_cache);
+        pack_into_column(
+            &mut track.blocks,
+            surface,
+            col1_x,
+            track_top,
+            available,
+            font_cache,
+            page_index,
+            headings,
+        );
     }
     *y_cursor = track_top + available;
     track.blocks.is_empty()
@@ -787,13 +930,15 @@ fn place_blocks_into_column(
     column_x: f32,
     column_top: f32,
     font_cache: &mut HashMap<u64, Font>,
+    page_index: usize,
+    headings: &mut Vec<HeadingRecord>,
 ) -> f32 {
     let mut y = column_top;
     for (i, block) in blocks.iter().enumerate() {
         let at_top = i == 0;
         let collapsed_top = if at_top { 0.0 } else { block_top_margin(block) };
         let draw_y = y + collapsed_top;
-        draw_block(block, surface, column_x, draw_y, font_cache);
+        draw_block(block, surface, column_x, draw_y, font_cache, page_index, headings);
         y = draw_y + block_height(block) + block_space_after(block);
     }
     y
@@ -835,6 +980,8 @@ fn draw_block(
     column_x: f32,
     draw_y: f32,
     font_cache: &mut HashMap<u64, Font>,
+    page_index: usize,
+    headings: &mut Vec<HeadingRecord>,
 ) {
     match block {
         LaidOut::Block {
@@ -844,6 +991,7 @@ fn draw_block(
             marker,
             line_start,
             line_end,
+            heading_level,
             ..
         } => {
             let content_x = column_x + indent;
@@ -860,6 +1008,15 @@ fn draw_block(
             if let Some(m) = marker {
                 let marker_x = content_x - LIST_MARKER_OFFSET;
                 draw_layout(surface, &m.layout, marker_x, draw_y, &m.text, font_cache);
+            }
+            if let Some(level) = *heading_level {
+                headings.push(HeadingRecord {
+                    level,
+                    text: text.clone(),
+                    page_index,
+                    x: content_x,
+                    y: draw_y,
+                });
             }
         }
         LaidOut::Rule { width, .. } => {
@@ -1137,7 +1294,14 @@ fn lay_out_element(
                 &[],
             );
             let (top, bottom) = heading_margins(*level, size);
-            out.push(make_block(layout, text.clone(), indent, bottom, top, false));
+            out.push(make_heading_block(
+                layout,
+                text.clone(),
+                indent,
+                bottom,
+                top,
+                *level,
+            ));
         }
         Element::Paragraph(inlines) => {
             let (text, spans) = collect_inline_text(inlines);
