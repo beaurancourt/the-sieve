@@ -84,7 +84,7 @@ jobs:
       - name: Install cargo-tauri (prebuilt)
         uses: taiki-e/install-action@v2
         with:
-          tool: tauri-cli@^2
+          tool: tauri-cli@2
 
       - name: Build CLI
         run: cargo build --release --target ${{ matrix.target }} --locked -p the-sieve
