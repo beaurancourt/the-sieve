@@ -9,16 +9,16 @@
 //! - **Boxed text**: Read-aloud text with distinct styling
 //! - **Layout switching**: `<!-- 1-column -->` / `<!-- 2-column -->` directives
 //! - **Page breaks**: Explicit page break control
-//! - **Half-letter format**: 5.5" x 8.5" for booklet printing
+//! - **Half-letter format**: 5.5" x 8.5" default; also supports letter, A4, A5
 //!
 //! # Example
 //!
 //! ```rust,ignore
-//! use the_sieve::convert_markdown_to_pdf;
+//! use the_sieve::{convert_markdown_to_pdf, PageSize};
 //! use std::path::Path;
 //!
 //! let markdown = "# Hello\n\nA paragraph.";
-//! let pdf_data = convert_markdown_to_pdf(markdown, Path::new(".")).unwrap();
+//! let pdf_data = convert_markdown_to_pdf(markdown, Path::new("."), PageSize::HalfLetter).unwrap();
 //! ```
 
 pub mod ast;
@@ -32,6 +32,7 @@ use std::path::Path;
 
 pub use ast::{Document, Element};
 pub use error::{Result, SieveError};
+pub use renderer::PageSize;
 
 /// Convert markdown content to PDF bytes via the native krilla+parley pipeline.
 ///
@@ -39,9 +40,15 @@ pub use error::{Result, SieveError};
 ///
 /// * `markdown` - The markdown content to convert
 /// * `base_path` - Base path for resolving relative image paths
-pub fn convert_markdown_to_pdf(markdown: &str, base_path: &Path) -> Result<Vec<u8>> {
+/// * `page_size` - Page dimensions preset
+pub fn convert_markdown_to_pdf(
+    markdown: &str,
+    base_path: &Path,
+    page_size: PageSize,
+) -> Result<Vec<u8>> {
     let document = parser::parse(markdown)?;
-    renderer::pdf::render(&document, base_path).map_err(|e| SieveError::PdfRender(e.to_string()))
+    renderer::pdf::render(&document, base_path, page_size)
+        .map_err(|e| SieveError::PdfRender(e.to_string()))
 }
 
 /// Convert markdown content to HTML.

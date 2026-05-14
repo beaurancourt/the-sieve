@@ -1,6 +1,6 @@
 # The Sieve
 
-Converts TTRPG-flavored markdown into half-letter (5.5" × 8.5") PDFs sized for booklet printing. Ships as both a command-line tool and a desktop app.
+Converts TTRPG-flavored markdown into PDFs for booklet printing. Supports half-letter (5.5" × 8.5", default), digest, letter, A4, and A5 page sizes. Ships as both a command-line tool and a desktop app.
 
 ## Features
 
@@ -37,16 +37,19 @@ No runtime dependencies — fonts are embedded into the binaries.
 ## CLI usage
 
 ```sh
-the-sieve adventure.md                 # → adventure.pdf
-the-sieve adventure.md -o booklet.pdf  # custom output path
-the-sieve adventure.md --html-only     # emit intermediate HTML for debugging
+the-sieve adventure.md                        # → adventure.pdf (half-letter)
+the-sieve adventure.md --page-size digest     # digest (5.5" × 8.25")
+the-sieve adventure.md --page-size letter     # letter (8.5" × 11")
+the-sieve adventure.md --page-size a4         # A4 (210 × 297 mm)
+the-sieve adventure.md -o booklet.pdf         # custom output path
+the-sieve adventure.md --html-only            # emit intermediate HTML for debugging
 ```
 
 ## Desktop app
 
 ![The Sieve desktop app watching a markdown file](docs/screenshots/desktop-app.png)
 
-Open the app, click **Pick file…**, and select a markdown file. Every time you save the file the app rebuilds the PDF next to it (200 ms debounce so editor double-saves don't double-rebuild). The log panel shows each rebuild with timestamp and duration.
+Open the app, click **Pick file…**, and select a markdown file. Use the **page size dropdown** to choose half-letter, digest, letter, A4, or A5 — changing it triggers an immediate rebuild. Every time you save the file the app rebuilds the PDF next to it (200 ms debounce so editor double-saves don't double-rebuild). The log panel shows each rebuild with timestamp and duration.
 
 ## How it works
 

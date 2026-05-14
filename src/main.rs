@@ -55,7 +55,7 @@ fn run(args: &Args) -> Result<(), SieveError> {
             eprintln!("Generating PDF...");
         }
 
-        let pdf_data = convert_markdown_to_pdf(&input_content, &base_path)?;
+        let pdf_data = convert_markdown_to_pdf(&input_content, &base_path, args.page_size)?;
 
         if args.verbose {
             eprintln!("Writing PDF: {}", output_path.display());
