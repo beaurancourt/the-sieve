@@ -23,6 +23,7 @@ use crate::ast::{
 };
 use crate::licenses::{self, LicenseFragment};
 use anyhow::{anyhow, Result};
+use clap::ValueEnum;
 use krilla::Document as KrillaDocument;
 use krilla::color::rgb;
 use krilla::geom::{PathBuilder, Point, Rect, Size, Transform};
@@ -43,6 +44,37 @@ use std::collections::{HashMap, VecDeque};
 use std::path::Path;
 use std::sync::Arc;
 
+/// Preset page sizes.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum PageSize {
+    /// 5.5" × 8.5" (half US letter, for booklet printing)
+    #[default]
+    #[value(alias = "half")]
+    HalfLetter,
+    /// 5.5" × 8.25" (standard digest/trade paperback)
+    Digest,
+    /// 8.5" × 11" (US letter)
+    Letter,
+    /// 210 mm × 297 mm
+    A4,
+    /// 148 mm × 210 mm
+    A5,
+}
+
+impl PageSize {
+    /// Returns `(width, height)` in PDF points (1 pt = 1/72 inch).
+    pub fn dimensions(self) -> (f32, f32) {
+        match self {
+            PageSize::HalfLetter => (5.5 * 72.0, 8.5 * 72.0),
+            PageSize::Digest => (5.5 * 72.0, 8.25 * 72.0),
+            PageSize::Letter => (8.5 * 72.0, 11.0 * 72.0),
+            // 1 mm = 72/25.4 pt
+            PageSize::A4 => (210.0 * 72.0 / 25.4, 297.0 * 72.0 / 25.4),
+            PageSize::A5 => (148.0 * 72.0 / 25.4, 210.0 * 72.0 / 25.4),
+        }
+    }
+}
+
 const FONT_REGULAR: &[u8] = include_bytes!("../../fonts/EBGaramond-Regular.ttf");
 const FONT_ITALIC: &[u8] = include_bytes!("../../fonts/EBGaramond-Italic.ttf");
 const FONT_BOLD: &[u8] = include_bytes!("../../fonts/EBGaramond-Bold.ttf");
@@ -51,8 +83,6 @@ const FONT_MONO: &[u8] = include_bytes!("../../fonts/JetBrainsMono-Regular.ttf")
 
 const FAMILY: &str = "EB Garamond";
 const MONO_FAMILY: &str = "JetBrains Mono";
-const PAGE_W: f32 = 5.5 * 72.0;
-const PAGE_H: f32 = 8.5 * 72.0;
 const MARGIN_X: f32 = 0.4 * 72.0;
 const MARGIN_Y: f32 = 0.5 * 72.0;
 const BODY_SIZE: f32 = 9.0;
@@ -72,12 +102,14 @@ const TABLE_BORDER_COLOR: (u8, u8, u8) = (0x99, 0x99, 0x99);
 const TABLE_HEADER_FILL: (u8, u8, u8) = (0xe8, 0xe8, 0xe8);
 
 /// Render a Document AST to PDF bytes using the native pipeline.
-pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
+pub fn render(doc: &Document, base_path: &Path, page_size: PageSize) -> Result<Vec<u8>> {
+    let (page_w, page_h) = page_size.dimensions();
+
     let mut font_cx = build_font_context();
     let mut layout_cx: LayoutContext<rgb::Color> = LayoutContext::new();
 
     // Pass 1: lay out elements into tracks.
-    let tracks = build_tracks(doc, &mut font_cx, &mut layout_cx, base_path);
+    let tracks = build_tracks(doc, &mut font_cx, &mut layout_cx, base_path, page_w);
 
     // Pass 2: pack tracks onto pages.
     let mut document = KrillaDocument::new();
@@ -91,12 +123,12 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
     while !tracks.is_empty() || emit_empty_page {
         emit_empty_page = false;
 
-        let page_settings = PageSettings::from_wh(PAGE_W, PAGE_H)
+        let page_settings = PageSettings::from_wh(page_w, page_h)
             .ok_or_else(|| anyhow!("invalid page size"))?;
         let mut page = document.start_page_with(page_settings);
         let mut surface = page.surface();
         let mut y = MARGIN_Y;
-        let content_bottom = PAGE_H - MARGIN_Y;
+        let content_bottom = page_h - MARGIN_Y;
 
         while let Some(mut track) = tracks.pop_front() {
             let available = content_bottom - y;
@@ -129,6 +161,7 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
                     &mut font_cache,
                     page_index,
                     &mut headings,
+                    page_w,
                 ),
             };
             if !placed {
@@ -146,6 +179,8 @@ pub fn render(doc: &Document, base_path: &Path) -> Result<Vec<u8>> {
             &mut font_cx,
             &mut layout_cx,
             &mut font_cache,
+            page_w,
+            page_h,
         );
 
         surface.finish();
@@ -311,6 +346,7 @@ fn build_tracks(
     font_cx: &mut FontContext,
     layout_cx: &mut LayoutContext<rgb::Color>,
     base_path: &Path,
+    page_w: f32,
 ) -> Vec<Track> {
     let mut tracks: Vec<Track> = Vec::new();
     let mut current_columns: u8 = 2;
@@ -339,7 +375,7 @@ fn build_tracks(
                 // page break if there's no content to flush and we're already
                 // about to break (e.g. an immediately preceding pagebreak).
                 push_page_break_track(&mut tracks, &mut current_blocks, current_columns);
-                emit_license_tracks(*kind, info, font_cx, layout_cx, &mut tracks);
+                emit_license_tracks(*kind, info, font_cx, layout_cx, &mut tracks, page_w);
             }
             // H1 in 2-column mode spans both columns: split the surrounding
             // 2-col track so the H1 renders as a centered 1-col band.
@@ -352,7 +388,7 @@ fn build_tracks(
                     });
                 }
                 let mut span_blocks = Vec::new();
-                let span_w = column_width_for(1);
+                let span_w = column_width_for(1, page_w);
                 lay_out_element(el, 0.0, font_cx, layout_cx, span_w, base_path, &mut span_blocks);
                 if let Some(LaidOut::Block { layout, .. }) = span_blocks.last_mut() {
                     layout.align(
@@ -368,7 +404,7 @@ fn build_tracks(
                 });
             }
             other => {
-                let cw = column_width_for(current_columns);
+                let cw = column_width_for(current_columns, page_w);
                 lay_out_element(other, 0.0, font_cx, layout_cx, cw, base_path, &mut current_blocks);
             }
         }
@@ -412,8 +448,9 @@ fn emit_license_tracks(
     font_cx: &mut FontContext,
     layout_cx: &mut LayoutContext<rgb::Color>,
     tracks: &mut Vec<Track>,
+    page_w: f32,
 ) {
-    let span_w = column_width_for(1);
+    let span_w = column_width_for(1, page_w);
 
     // 1) Header: title + optional attribution + optional changes (single column).
     let mut header_blocks: Vec<LaidOut> = Vec::new();
@@ -471,7 +508,7 @@ fn emit_license_tracks(
     });
 
     // 2) Body: license fragments rendered at 6.5pt, two columns.
-    let body_w = column_width_for(2);
+    let body_w = column_width_for(2, page_w);
     let mut body_blocks: Vec<LaidOut> = Vec::new();
     for frag in licenses::fragments(kind) {
         match frag {
@@ -596,8 +633,8 @@ fn make_centered_block(
     make_block(layout, text.to_string(), 0.0, space_after, top_margin, false)
 }
 
-fn column_width_for(cols: u8) -> f32 {
-    let total = PAGE_W - 2.0 * MARGIN_X;
+fn column_width_for(cols: u8, page_w: f32) -> f32 {
+    let total = page_w - 2.0 * MARGIN_X;
     match cols {
         1 => total,
         _ => (total - COLUMN_GAP) / 2.0,
@@ -836,13 +873,14 @@ fn place_double_track(
     font_cache: &mut HashMap<u64, Font>,
     page_index: usize,
     headings: &mut Vec<HeadingRecord>,
+    page_w: f32,
 ) -> bool {
     let n = track.blocks.len();
     if n == 0 {
         return true;
     }
 
-    let col_w = column_width_for(2);
+    let col_w = column_width_for(2, page_w);
     let col0_x = MARGIN_X;
     let col1_x = MARGIN_X + col_w + COLUMN_GAP;
     let track_top = *y_cursor;
@@ -1260,10 +1298,12 @@ fn draw_page_number(
     font_cx: &mut FontContext,
     layout_cx: &mut LayoutContext<rgb::Color>,
     font_cache: &mut HashMap<u64, Font>,
+    page_w: f32,
+    page_h: f32,
 ) {
     let text = page_num.to_string();
     let size = 8.0;
-    let max_advance = PAGE_W - 2.0 * MARGIN_X;
+    let max_advance = page_w - 2.0 * MARGIN_X;
     let mut layout = build_layout(
         font_cx,
         layout_cx,
@@ -1283,7 +1323,7 @@ fn draw_page_number(
 
     // Vertically center the number in the bottom margin band.
     let layout_h = layout.height();
-    let y = PAGE_H - MARGIN_Y + (MARGIN_Y - layout_h) / 2.0;
+    let y = page_h - MARGIN_Y + (MARGIN_Y - layout_h) / 2.0;
     draw_layout(surface, &layout, MARGIN_X, y, &text, font_cache);
 }
 
@@ -2304,5 +2344,240 @@ fn walk_inline(
         Inline::Image(_) => {}
         Inline::SoftBreak => text.push(' '),
         Inline::HardBreak => text.push('\n'),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_page_size_default_is_half_letter() {
+        assert_eq!(PageSize::default(), PageSize::HalfLetter);
+    }
+
+    #[test]
+    fn test_page_size_dimensions_half_letter() {
+        let (w, h) = PageSize::HalfLetter.dimensions();
+        assert!((w - 5.5 * 72.0).abs() < 0.01);
+        assert!((h - 8.5 * 72.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_page_size_dimensions_digest() {
+        let (w, h) = PageSize::Digest.dimensions();
+        assert!((w - 5.5 * 72.0).abs() < 0.01);
+        assert!((h - 8.25 * 72.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_page_size_dimensions_letter() {
+        let (w, h) = PageSize::Letter.dimensions();
+        assert!((w - 8.5 * 72.0).abs() < 0.01);
+        assert!((h - 11.0 * 72.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_page_size_dimensions_a4() {
+        let (w, h) = PageSize::A4.dimensions();
+        // 210mm and 297mm in points
+        assert!((w - 595.276).abs() < 0.01);
+        assert!((h - 841.89).abs() < 0.02);
+    }
+
+    #[test]
+    fn test_page_size_dimensions_a5() {
+        let (w, h) = PageSize::A5.dimensions();
+        // 148mm and 210mm in points
+        assert!((w - 419.528).abs() < 0.01);
+        assert!((h - 595.276).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_page_size_digest_shorter_than_half_letter() {
+        let (_, h_half) = PageSize::HalfLetter.dimensions();
+        let (_, h_digest) = PageSize::Digest.dimensions();
+        assert!(h_digest < h_half, "digest should be shorter than half-letter");
+    }
+
+    #[test]
+    fn test_rendered_pdf_media_boxes_match_page_sizes() {
+        let markdown =
+            "# First\n\nA paragraph.\n\n<!-- pagebreak -->\n\n# Second\n\nAnother paragraph.";
+        for size in [
+            PageSize::HalfLetter,
+            PageSize::Digest,
+            PageSize::Letter,
+            PageSize::A4,
+            PageSize::A5,
+        ] {
+            let pdf = render_test_pdf(markdown, size);
+            let media_boxes = media_boxes(&pdf);
+            assert_eq!(media_boxes.len(), 2, "expected two pages for {:?}", size);
+
+            let (expected_w, expected_h) = size.dimensions();
+            for (page_idx, (actual_w, actual_h)) in media_boxes.iter().enumerate() {
+                assert_close(
+                    *actual_w,
+                    expected_w,
+                    &format!("{:?} page {} width", size, page_idx + 1),
+                );
+                assert_close(
+                    *actual_h,
+                    expected_h,
+                    &format!("{:?} page {} height", size, page_idx + 1),
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_two_column_outline_destinations_follow_page_width() {
+        let markdown = "# Column Layout Test\n\n\
+            ## Left Column Heading\n\n\
+            Left column paragraph with enough text to make this side heavier than the right. \
+            It repeats a little so the balanced split should move the next heading to the second \
+            column. This sentence adds a bit more weight.\n\n\
+            ## Right Column Heading\n\n\
+            Right column paragraph.\n";
+
+        for size in [PageSize::HalfLetter, PageSize::Letter] {
+            let pdf = render_test_pdf(markdown, size);
+            let (page_w, _) = size.dimensions();
+            let expected_second_col_x = MARGIN_X + column_width_for(2, page_w) + COLUMN_GAP;
+
+            let (left_x, _) = outline_destination(&pdf, "Left Column Heading");
+            let (right_x, _) = outline_destination(&pdf, "Right Column Heading");
+
+            assert_close(left_x, MARGIN_X, &format!("{:?} left heading x", size));
+            assert_close(
+                right_x,
+                expected_second_col_x,
+                &format!("{:?} right heading x", size),
+            );
+        }
+    }
+
+    #[test]
+    fn test_license_header_wrapping_uses_selected_page_width() {
+        let half_lines = license_attribution_line_count(PageSize::HalfLetter);
+        let letter_lines = license_attribution_line_count(PageSize::Letter);
+
+        assert!(
+            letter_lines < half_lines,
+            "wider letter pages should wrap the license attribution into fewer lines \
+             (half-letter: {half_lines}, letter: {letter_lines})"
+        );
+    }
+
+    fn render_test_pdf(markdown: &str, page_size: PageSize) -> Vec<u8> {
+        let doc = crate::parser::parse(markdown).unwrap();
+        render(&doc, std::path::Path::new("."), page_size).unwrap()
+    }
+
+    fn media_boxes(pdf: &[u8]) -> Vec<(f32, f32)> {
+        let text = String::from_utf8_lossy(pdf);
+        let marker = "/MediaBox [0 0 ";
+        let mut boxes = Vec::new();
+        let mut search_from = 0;
+
+        while let Some(relative_start) = text[search_from..].find(marker) {
+            let start = search_from + relative_start + marker.len();
+            let Some(relative_end) = text[start..].find(']') else {
+                panic!("unterminated MediaBox entry");
+            };
+            let values: Vec<f32> = text[start..start + relative_end]
+                .split_whitespace()
+                .map(|s| s.parse::<f32>().expect("MediaBox number"))
+                .collect();
+            assert_eq!(values.len(), 2, "expected width/height MediaBox values");
+            boxes.push((values[0], values[1]));
+            search_from = start + relative_end + 1;
+        }
+
+        boxes
+    }
+
+    fn outline_destination(pdf: &[u8], title: &str) -> (f32, f32) {
+        let text = String::from_utf8_lossy(pdf);
+        let title_marker = format!("/Title ({title})");
+        let title_start = text
+            .find(&title_marker)
+            .unwrap_or_else(|| panic!("missing outline title {title:?}"));
+        let dest_relative_start = text[title_start..]
+            .find("/Dest ")
+            .unwrap_or_else(|| panic!("missing outline destination for {title:?}"));
+        let dest_start = title_start + dest_relative_start + "/Dest ".len();
+
+        let mut dest_ref = text[dest_start..].split_whitespace();
+        let object_number = dest_ref
+            .next()
+            .unwrap_or_else(|| panic!("missing destination object for {title:?}"));
+        assert_eq!(dest_ref.next(), Some("0"));
+        assert_eq!(dest_ref.next(), Some("R"));
+
+        let object_marker = format!("\n{object_number} 0 obj\n[");
+        let object_start = text
+            .find(&object_marker)
+            .map(|idx| idx + object_marker.len())
+            .unwrap_or_else(|| {
+                let object_marker = format!("{object_number} 0 obj\n[");
+                text.find(&object_marker)
+                    .map(|idx| idx + object_marker.len())
+                    .unwrap_or_else(|| {
+                        panic!("missing destination object {object_number} for {title:?}")
+                    })
+            });
+        let object_end = text[object_start..]
+            .find(']')
+            .unwrap_or_else(|| panic!("unterminated destination object {object_number}"));
+        let parts: Vec<&str> = text[object_start..object_start + object_end]
+            .split_whitespace()
+            .collect();
+
+        assert_eq!(parts.get(3), Some(&"/XYZ"));
+        let x = parts
+            .get(4)
+            .unwrap_or_else(|| panic!("missing x destination for {title:?}"))
+            .parse::<f32>()
+            .expect("destination x");
+        let y = parts
+            .get(5)
+            .unwrap_or_else(|| panic!("missing y destination for {title:?}"))
+            .parse::<f32>()
+            .expect("destination y");
+        (x, y)
+    }
+
+    fn license_attribution_line_count(page_size: PageSize) -> usize {
+        let markdown = r#"<!-- license: cc-by-sa-4.0 attribution="A Long Attribution Name by an Extremely Verbose Publishing Collective With Several Contributors And Additional Source Credit" changes="Reformatted for a selected page size." -->"#;
+        let doc = crate::parser::parse(markdown).unwrap();
+        let mut font_cx = build_font_context();
+        let mut layout_cx: LayoutContext<rgb::Color> = LayoutContext::new();
+        let (page_w, _) = page_size.dimensions();
+        let tracks = build_tracks(
+            &doc,
+            &mut font_cx,
+            &mut layout_cx,
+            std::path::Path::new("."),
+            page_w,
+        );
+
+        let header_track = tracks
+            .iter()
+            .find(|track| track.columns == 1 && track.blocks.len() >= 2)
+            .expect("license header track");
+        match &header_track.blocks[1] {
+            LaidOut::Block { layout, .. } => layout.len(),
+            _ => panic!("license attribution should be a text block"),
+        }
+    }
+
+    fn assert_close(actual: f32, expected: f32, context: &str) {
+        let delta = (actual - expected).abs();
+        assert!(
+            delta < 0.05,
+            "{context}: expected {expected}, got {actual} (delta {delta})"
+        );
     }
 }

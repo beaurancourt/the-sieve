@@ -41,6 +41,15 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  select {
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #888;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #222;
+    cursor: pointer;
+  }
   .status {
     font-size: 13px;
     padding: 8px 12px;
@@ -61,6 +70,11 @@
       border-color: #555;
     }
     button:hover { background: #3a3a3a; }
+    select {
+      background: #2d2d2d;
+      color: #eaeaea;
+      border-color: #555;
+    }
     .status {
       background: #2d2d2d;
       color: #ccc;
@@ -95,6 +109,13 @@
 <body>
 <header>
   <h1>The Sieve</h1>
+  <select id="pageSize">
+    <option value="half-letter" selected>Half-letter (5.5" × 8.5")</option>
+    <option value="digest">Digest (5.5" × 8.25")</option>
+    <option value="letter">Letter (8.5" × 11")</option>
+    <option value="a4">A4 (210 × 297 mm)</option>
+    <option value="a5">A5 (148 × 210 mm)</option>
+  </select>
   <button id="pick">Pick file…</button>
   <button id="stop" disabled>Stop</button>
 </header>
@@ -107,6 +128,7 @@
 
   const pickBtn = document.getElementById('pick');
   const stopBtn = document.getElementById('stop');
+  const pageSizeEl = document.getElementById('pageSize');
   const statusEl = document.getElementById('status');
   const logEl = document.getElementById('log');
 
@@ -137,7 +159,7 @@
     try {
       const path = await invoke('pick_file');
       if (path) {
-        await invoke('start_watching', { path });
+        await invoke('start_watching', { path, pageSize: pageSizeEl.value });
         setStatus(`Watching: ${path}`, true);
       }
     } catch (err) {
@@ -152,6 +174,14 @@
     try {
       await invoke('stop_watching');
       setStatus('No file selected.', false);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  pageSizeEl.addEventListener('change', async () => {
+    try {
+      await invoke('set_page_size', { pageSize: pageSizeEl.value });
     } catch (err) {
       console.error(err);
     }
