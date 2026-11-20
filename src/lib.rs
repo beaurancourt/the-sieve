@@ -9,7 +9,7 @@
 //! - **Boxed text**: Read-aloud text with distinct styling
 //! - **Layout switching**: `<!-- 1-column -->` / `<!-- 2-column -->` directives
 //! - **Page breaks**: Explicit page break control
-//! - **Half-letter format**: 5.5" x 8.5" default; also supports letter, A4, A5
+//! - **Half-letter format**: 5.5" x 8.5" default; also supports digest, letter, A4, A5
 //!
 //! # Example
 //!

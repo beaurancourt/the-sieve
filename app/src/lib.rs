@@ -26,6 +26,7 @@ pub struct WatcherState {
     debouncer: Mutex<Option<Debouncer<notify::RecommendedWatcher>>>,
     current_path: Mutex<Option<PathBuf>>,
     page_size: Mutex<PageSize>,
+    rebuild_lock: Mutex<()>,
 }
 
 #[derive(Serialize, Clone)]
@@ -44,7 +45,13 @@ fn emit_log(app: &AppHandle, level: &'static str, message: impl Into<String>) {
     let _ = app.emit("log", entry);
 }
 
-fn rebuild(path: &Path, app: &AppHandle, page_size: PageSize) {
+fn with_rebuild_lock<T>(state: &WatcherState, f: impl FnOnce(PageSize) -> T) -> T {
+    let _guard = state.rebuild_lock.lock().unwrap_or_else(|e| e.into_inner());
+    let page_size = *state.page_size.lock().unwrap();
+    f(page_size)
+}
+
+fn rebuild_locked(path: &Path, app: &AppHandle, page_size: PageSize) {
     let start = Instant::now();
     let markdown = match std::fs::read_to_string(path) {
         Ok(s) => s,
@@ -72,6 +79,21 @@ fn rebuild(path: &Path, app: &AppHandle, page_size: PageSize) {
         }
         Err(e) => emit_log(app, "error", format!("Render failed: {e}")),
     }
+}
+
+fn rebuild(path: &Path, app: &AppHandle) {
+    let ws = app.state::<WatcherState>();
+    with_rebuild_lock(&ws, |page_size| rebuild_locked(path, app, page_size));
+}
+
+fn rebuild_current(app: &AppHandle) {
+    let ws = app.state::<WatcherState>();
+    with_rebuild_lock(&ws, |page_size| {
+        let path = ws.current_path.lock().unwrap().clone();
+        if let Some(p) = path {
+            rebuild_locked(&p, app, page_size);
+        }
+    });
 }
 
 fn file_stamp(path: &Path) -> Option<FileStamp> {
@@ -103,13 +125,6 @@ fn watched_file_changed(
     last_seen_stamp: &Mutex<Option<FileStamp>>,
 ) -> bool {
     file_stamp_changed(last_seen_stamp, file_stamp(path))
-}
-
-/// Read the current page size from managed state.
-fn current_page_size(app: &AppHandle) -> PageSize {
-    let ws = app.state::<WatcherState>();
-    let ps = *ws.page_size.lock().unwrap();
-    ps
 }
 
 #[tauri::command]
@@ -149,8 +164,7 @@ async fn start_watching(
                 if !events.is_empty()
                     && watched_file_changed(&path_for_cb, &last_seen_stamp_for_cb) =>
             {
-                let ps = current_page_size(&app_for_cb);
-                rebuild(&path_for_cb, &app_for_cb, ps);
+                rebuild(&path_for_cb, &app_for_cb);
             }
             Ok(_) => {}
             Err(e) => emit_log(&app_for_cb, "error", format!("Watch error: {e}")),
@@ -168,7 +182,7 @@ async fn start_watching(
     *state.current_path.lock().unwrap() = Some(path.clone());
 
     emit_log(&app, "info", format!("Watching {}", path.display()));
-    rebuild(&path, &app, ps);
+    rebuild(&path, &app);
     Ok(())
 }
 
@@ -193,10 +207,7 @@ async fn set_page_size(
     *state.page_size.lock().unwrap() = ps;
 
     // If we're currently watching a file, trigger an immediate rebuild.
-    let path = state.current_path.lock().unwrap().clone();
-    if let Some(p) = path {
-        rebuild(&p, &app, ps);
-    }
+    rebuild_current(&app);
     Ok(())
 }
 
@@ -285,5 +296,70 @@ mod tests {
 
         assert!(file_stamp_changed(&last_seen, None));
         assert_eq!(*last_seen.lock().unwrap(), Some(stamp));
+    }
+
+    #[test]
+    fn rebuild_lock_serializes_rebuilds_and_reads_latest_page_size() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::mpsc::{self, RecvTimeoutError};
+        use std::thread;
+
+        let state = Arc::new(WatcherState::default());
+        let active = Arc::new(AtomicUsize::new(0));
+        let seen_sizes = Arc::new(Mutex::new(Vec::new()));
+
+        let (first_entered_tx, first_entered_rx) = mpsc::channel();
+        let (allow_first_finish_tx, allow_first_finish_rx) = mpsc::channel();
+        let (second_started_tx, second_started_rx) = mpsc::channel();
+        let (second_done_tx, second_done_rx) = mpsc::channel();
+        let first_state = Arc::clone(&state);
+        let first_active = Arc::clone(&active);
+        let first_seen = Arc::clone(&seen_sizes);
+        let first = thread::spawn(move || {
+            with_rebuild_lock(&first_state, |ps| {
+                assert_eq!(first_active.fetch_add(1, Ordering::SeqCst), 0);
+                first_seen.lock().unwrap().push(ps);
+                first_entered_tx.send(()).unwrap();
+                allow_first_finish_rx.recv().unwrap();
+                assert_eq!(first_active.fetch_sub(1, Ordering::SeqCst), 1);
+            });
+        });
+
+        first_entered_rx.recv().unwrap();
+
+        // Simulate a page-size change while the first rebuild is still running.
+        *state.page_size.lock().unwrap() = PageSize::Letter;
+
+        let second_state = Arc::clone(&state);
+        let second_active = Arc::clone(&active);
+        let second_seen = Arc::clone(&seen_sizes);
+        let second = thread::spawn(move || {
+            second_started_tx.send(()).unwrap();
+            with_rebuild_lock(&second_state, |ps| {
+                assert_eq!(second_active.fetch_add(1, Ordering::SeqCst), 0);
+                second_seen.lock().unwrap().push(ps);
+                assert_eq!(second_active.fetch_sub(1, Ordering::SeqCst), 1);
+                second_done_tx.send(()).unwrap();
+            });
+        });
+
+        second_started_rx.recv().unwrap();
+        assert_eq!(
+            second_done_rx.recv_timeout(Duration::from_millis(50)),
+            Err(RecvTimeoutError::Timeout)
+        );
+
+        // Another change before the queued rebuild acquires the lock should be observed by it.
+        *state.page_size.lock().unwrap() = PageSize::A4;
+        allow_first_finish_tx.send(()).unwrap();
+
+        second_done_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        first.join().unwrap();
+        second.join().unwrap();
+
+        assert_eq!(
+            *seen_sizes.lock().unwrap(),
+            vec![PageSize::HalfLetter, PageSize::A4]
+        );
     }
 }
