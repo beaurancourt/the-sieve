@@ -52,6 +52,10 @@ Open the app, click **Pick file…**, and select a markdown file. Every time you
 
 `markdown → AST → PDF`. The renderer is built on [krilla](https://crates.io/crates/krilla) (PDF output) and [parley](https://crates.io/crates/parley) (paragraph layout, line breaking, font fallback). Fonts shipped with the binary: EB Garamond and JetBrains Mono (both OFL 1.1). The desktop app is a small [Tauri 2](https://v2.tauri.app/) wrapper around the same renderer.
 
+## Contributing
+
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, code style, and what to include in a pull request.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
