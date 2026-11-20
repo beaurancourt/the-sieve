@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Rust CLI that converts TTRPG-flavored markdown into half-letter (5.5" × 8.5") PDFs sized for booklet printing. The binary is `the-sieve`; the library crate name is `the_sieve`.
+A Rust CLI that converts TTRPG-flavored markdown into PDFs for booklet printing. The default page size is half-letter (5.5" × 8.5"); digest, letter, A4, and A5 are also available via `--page-size`. The binary is `the-sieve`; the library crate name is `the_sieve`.
 
 ## Commands
 
@@ -15,7 +15,7 @@ cargo test -p the-sieve <name>   # run a single test by name substring
 cargo run -- <INPUT.md>          # convert a markdown file to PDF
 ```
 
-CLI flags (see `src/cli.rs`): `-o OUTPUT`, `-v`, `--html-only` (emit intermediate HTML for debugging).
+CLI flags (see `src/cli.rs`): `-o OUTPUT`, `-v`, `--html-only` (emit intermediate HTML for debugging), `--page-size <half-letter|digest|letter|a4|a5>` (default: half-letter).
 
 The build is fully self-contained — fonts are embedded via `include_bytes!`, there are no runtime dependencies.
 
@@ -69,6 +69,6 @@ Embedded via `include_bytes!` in `src/renderer/pdf.rs`.
 
 `src/licenses.rs` embeds the canonical OGL 1.0a and CC-BY-SA 4.0 texts via `include_str!` from `licenses/*.txt`. The body is parsed into setext-heading and paragraph fragments so that the source files' visual underlines (`====` / `----`) become real headings instead of literal characters in the output.
 
-### Half-letter output
+### Page geometry
 
-Page geometry (5.5" × 8.5", two-column, 0.4"/0.5" margins, 11pt column gap) is hardcoded in `src/renderer/pdf.rs` — the format is the project's identity, not a parameter.
+Page size is selected at runtime via `--page-size` (CLI) or the dropdown in the desktop app. Supported presets: half-letter (5.5" × 8.5", default), digest (5.5" × 8.25"), letter (8.5" × 11"), A4 (210 × 297 mm), A5 (148 × 210 mm). The `PageSize` enum lives in `src/renderer/pdf.rs`; its `dimensions()` method returns `(width_pt, height_pt)`. Margins (0.4" horizontal, 0.5" vertical) and the 11pt column gap are constants in the same file.

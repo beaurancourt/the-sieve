@@ -1,3 +1,4 @@
+use crate::renderer::pdf::PageSize;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -6,10 +7,10 @@ use std::path::PathBuf;
     name = "the-sieve",
     author = "The Sieve",
     version,
-    about = "Convert TTRPG markdown to half-letter PDFs for booklet printing",
+    about = "Convert TTRPG markdown to typeset PDFs (half-letter, digest, letter, A4, A5)",
     long_about = "The Sieve converts markdown documents with TTRPG-specific extensions
 (stat blocks, boxed read-aloud text, layout switching) into professionally typeset
-PDFs sized for half-letter (5.5\" x 8.5\") booklet printing."
+PDFs. Supports half-letter (5.5\" x 8.5\"), digest (5.5\" x 8.25\"), letter, A4, and A5 page sizes."
 )]
 pub struct Args {
     /// Input markdown file
@@ -27,6 +28,10 @@ pub struct Args {
     /// Output intermediate HTML file instead of PDF
     #[arg(long)]
     pub html_only: bool,
+
+    /// Page size preset
+    #[arg(long, value_enum, default_value_t = PageSize::HalfLetter)]
+    pub page_size: PageSize,
 }
 
 impl Args {
