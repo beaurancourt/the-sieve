@@ -285,7 +285,8 @@ hr.page-break {
 }
 </style>
 </head>
-"##.to_string()
+"##
+    .to_string()
 }
 
 fn render_element(element: &Element) -> String {
@@ -299,8 +300,15 @@ fn render_element(element: &Element) -> String {
         }
 
         Element::CodeBlock { language, code } => {
-            let lang_class = language.as_ref().map(|l| format!(" class=\"language-{}\"", l)).unwrap_or_default();
-            format!("<pre><code{}>{}</code></pre>\n", lang_class, escape_html(code))
+            let lang_class = language
+                .as_ref()
+                .map(|l| format!(" class=\"language-{}\"", l))
+                .unwrap_or_default();
+            format!(
+                "<pre><code{}>{}</code></pre>\n",
+                lang_class,
+                escape_html(code)
+            )
         }
 
         Element::BlockQuote(elements) => {
@@ -308,9 +316,7 @@ fn render_element(element: &Element) -> String {
             format!("<blockquote>{}</blockquote>\n", content)
         }
 
-        Element::List { ordered, items } => {
-            render_list(*ordered, items)
-        }
+        Element::List { ordered, items } => render_list(*ordered, items),
 
         Element::ThematicBreak => "<hr>\n".to_string(),
 
@@ -320,20 +326,19 @@ fn render_element(element: &Element) -> String {
         Element::ColumnLayout(_) => String::new(), // Handled in main loop
 
         Element::StatBlock(text) => {
-            format!("<div class=\"stat-block\">{}</div>\n", render_markdown_text(text))
+            format!(
+                "<div class=\"stat-block\">{}</div>\n",
+                render_markdown_text(text)
+            )
         }
 
         Element::BoxedText(text) => {
             format!("<div class=\"boxed-text\">{}</div>\n", escape_html(text))
         }
 
-        Element::Image(image) => {
-            render_image(image)
-        }
+        Element::Image(image) => render_image(image),
 
-        Element::Table(table) => {
-            render_table(table)
-        }
+        Element::Table(table) => render_table(table),
 
         Element::Raw(html) => {
             // Pass through raw HTML
@@ -357,7 +362,11 @@ fn render_inlines(inlines: &[Inline]) -> String {
                 output.push_str(&format!("<code>{}</code>", escape_html(code)));
             }
             Inline::Link { text, url } => {
-                output.push_str(&format!("<a href=\"{}\">{}</a>", escape_html(url), render_inlines(text)));
+                output.push_str(&format!(
+                    "<a href=\"{}\">{}</a>",
+                    escape_html(url),
+                    render_inlines(text)
+                ));
             }
             Inline::Image(image) => {
                 output.push_str(&render_image(image));
@@ -375,10 +384,12 @@ fn render_list(ordered: bool, items: &[ListItem]) -> String {
 
     for item in items {
         match item.task {
-            Some(true) => output
-                .push_str("<li style=\"list-style:none\"><input type=\"checkbox\" checked disabled> "),
-            Some(false) => output
-                .push_str("<li style=\"list-style:none\"><input type=\"checkbox\" disabled> "),
+            Some(true) => output.push_str(
+                "<li style=\"list-style:none\"><input type=\"checkbox\" checked disabled> ",
+            ),
+            Some(false) => {
+                output.push_str("<li style=\"list-style:none\"><input type=\"checkbox\" disabled> ")
+            }
             None => output.push_str("<li>"),
         }
         for (i, element) in item.content.iter().enumerate() {
@@ -387,7 +398,10 @@ fn render_list(ordered: bool, items: &[ListItem]) -> String {
                     // Don't wrap in <p> for simple list items
                     output.push_str(&render_inlines(inlines));
                 }
-                Element::List { ordered: nested_ordered, items: nested_items } => {
+                Element::List {
+                    ordered: nested_ordered,
+                    items: nested_items,
+                } => {
                     output.push('\n');
                     output.push_str(&render_list(*nested_ordered, nested_items));
                 }
@@ -407,7 +421,9 @@ fn render_list(ordered: bool, items: &[ListItem]) -> String {
 }
 
 fn render_image(image: &Image) -> String {
-    let width_style = image.width.as_ref()
+    let width_style = image
+        .width
+        .as_ref()
         .map(|w| format!(" style=\"width: {}\"", w))
         .unwrap_or_default();
     format!(
@@ -429,7 +445,11 @@ fn render_table(table: &Table) -> String {
             Alignment::Right => " style=\"text-align: right\"",
             Alignment::None => "",
         };
-        output.push_str(&format!("<th{}>{}</th>\n", align_style, escape_html(header)));
+        output.push_str(&format!(
+            "<th{}>{}</th>\n",
+            align_style,
+            escape_html(header)
+        ));
     }
 
     output.push_str("</tr>\n</thead>\n<tbody>\n");
@@ -659,4 +679,3 @@ fn escape_html(text: &str) -> String {
 fn apply_typography(text: &str) -> String {
     text.replace("->", "\u{2192}")
 }
-

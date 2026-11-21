@@ -112,7 +112,10 @@ fn file_stamp_changed(
     };
 
     let mut last_seen = last_seen_stamp.lock().unwrap();
-    if last_seen.map(|previous| previous == current_stamp).unwrap_or(false) {
+    if last_seen
+        .map(|previous| previous == current_stamp)
+        .unwrap_or(false)
+    {
         return false;
     }
 
@@ -120,10 +123,7 @@ fn file_stamp_changed(
     true
 }
 
-fn watched_file_changed(
-    path: &Path,
-    last_seen_stamp: &Mutex<Option<FileStamp>>,
-) -> bool {
+fn watched_file_changed(path: &Path, last_seen_stamp: &Mutex<Option<FileStamp>>) -> bool {
     file_stamp_changed(last_seen_stamp, file_stamp(path))
 }
 

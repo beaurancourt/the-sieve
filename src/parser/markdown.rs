@@ -179,16 +179,23 @@ fn process_start_tag(tag: Tag, state: &mut ParserState) {
         Tag::List(start) => {
             // If we're inside a list item with pending inline content, save it first
             // This ensures "- Text:\n  - nested" keeps "Text:" before the nested list
-            let pending_inlines = if !state.list_stack.is_empty() && !state.inline_stack.is_empty() {
+            let pending_inlines = if !state.list_stack.is_empty() && !state.inline_stack.is_empty()
+            {
                 let inlines = state.pop_inline_context();
                 // Push empty context back for the parent item to maintain stack balance
                 state.push_inline_context();
-                if !inlines.is_empty() { Some(inlines) } else { None }
+                if !inlines.is_empty() {
+                    Some(inlines)
+                } else {
+                    None
+                }
             } else {
                 None
             };
 
-            if let (Some(inlines), Some(parent_list)) = (pending_inlines, state.list_stack.last_mut()) {
+            if let (Some(inlines), Some(parent_list)) =
+                (pending_inlines, state.list_stack.last_mut())
+            {
                 parent_list.current_item.push(Element::Paragraph(inlines));
             }
 
@@ -246,7 +253,9 @@ fn process_start_tag(tag: Tag, state: &mut ParserState) {
             // Store URL for later - we'll handle this in End tag
             state.add_inline(Inline::Text(format!("\0LINK:{}\0", dest_url)));
         }
-        Tag::Image { dest_url, title, .. } => {
+        Tag::Image {
+            dest_url, title, ..
+        } => {
             state.push_inline_context();
             // Store image info for later
             state.add_inline(Inline::Text(format!(
@@ -265,9 +274,7 @@ fn process_end_tag(tag: TagEnd, document: &mut Document, state: &mut ParserState
             let inlines = state.pop_inline_context();
             if !inlines.is_empty() {
                 if state.in_blockquote {
-                    state
-                        .blockquote_content
-                        .push(Element::Paragraph(inlines));
+                    state.blockquote_content.push(Element::Paragraph(inlines));
                 } else if let Some(list) = state.list_stack.last_mut() {
                     list.current_item.push(Element::Paragraph(inlines));
                 } else {

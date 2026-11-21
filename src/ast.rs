@@ -26,19 +26,31 @@ impl Default for Document {
 
 #[derive(Debug, Clone)]
 pub enum Element {
-    Heading { level: u8, text: String },
+    Heading {
+        level: u8,
+        text: String,
+    },
     Paragraph(Vec<Inline>),
-    CodeBlock { language: Option<String>, code: String },
+    CodeBlock {
+        language: Option<String>,
+        code: String,
+    },
     BlockQuote(Vec<Element>),
-    List { ordered: bool, items: Vec<ListItem> },
+    List {
+        ordered: bool,
+        items: Vec<ListItem>,
+    },
     ThematicBreak,
     PageBreak,
-    ColumnLayout(u8), // Number of columns (1 = single, 2 = two-column)
+    ColumnLayout(u8),  // Number of columns (1 = single, 2 = two-column)
     StatBlock(String), // Shaded box for stat blocks
     BoxedText(String),
     Image(Image),
     Table(Table),
-    License { kind: LicenseKind, info: LicenseInfo },
+    License {
+        kind: LicenseKind,
+        info: LicenseInfo,
+    },
     Raw(String),
 }
 
@@ -94,4 +106,3 @@ pub enum Alignment {
     Right,
     None,
 }
-
