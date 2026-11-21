@@ -101,8 +101,49 @@ const TABLE_BORDER_WIDTH: f32 = 0.5;
 const TABLE_BORDER_COLOR: (u8, u8, u8) = (0x99, 0x99, 0x99);
 const TABLE_HEADER_FILL: (u8, u8, u8) = (0xe8, 0xe8, 0xe8);
 
+/// Page geometry as laid out by the renderer.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PageGeometry {
+    /// Page width in PDF points.
+    pub width: f32,
+    /// Page height in PDF points.
+    pub height: f32,
+}
+
+/// An outline entry (PDF bookmark) and the point it targets.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OutlineEntry {
+    pub title: String,
+    pub page_index: usize,
+    /// Target x coordinate in PDF points.
+    pub x: f32,
+    /// Target y coordinate in PDF points, measured from the top of the page.
+    pub y: f32,
+}
+
+/// The rendered PDF together with the geometry the layout produced for it.
+#[derive(Debug, Clone)]
+pub struct RenderOutput {
+    pub pdf: Vec<u8>,
+    /// Dimensions of each page, in page order.
+    pub pages: Vec<PageGeometry>,
+    /// Outline entries in document order.
+    pub outline: Vec<OutlineEntry>,
+}
+
 /// Render a Document AST to PDF bytes using the native pipeline.
 pub fn render(doc: &Document, base_path: &Path, page_size: PageSize) -> Result<Vec<u8>> {
+    render_with_report(doc, base_path, page_size).map(|output| output.pdf)
+}
+
+/// Render a Document AST to PDF bytes while also reporting the geometry chosen
+/// by the layout pass. Callers that need page sizes or outline positions can
+/// use this instead of parsing the PDF.
+pub fn render_with_report(
+    doc: &Document,
+    base_path: &Path,
+    page_size: PageSize,
+) -> Result<RenderOutput> {
     let (page_w, page_h) = page_size.dimensions();
 
     let mut font_cx = build_font_context();
@@ -119,9 +160,14 @@ pub fn render(doc: &Document, base_path: &Path, page_size: PageSize) -> Result<V
     let mut tracks: VecDeque<Track> = tracks.into();
     let mut emit_empty_page = tracks.is_empty();
     let mut page_index: usize = 0;
+    let mut pages = Vec::new();
 
     while !tracks.is_empty() || emit_empty_page {
         emit_empty_page = false;
+        pages.push(PageGeometry {
+            width: page_w,
+            height: page_h,
+        });
 
         let page_settings = PageSettings::from_wh(page_w, page_h)
             .ok_or_else(|| anyhow!("invalid page size"))?;
@@ -192,7 +238,22 @@ pub fn render(doc: &Document, base_path: &Path, page_size: PageSize) -> Result<V
         document.set_outline(build_outline(&headings));
     }
 
-    document.finish().map_err(|e| anyhow!("{e:?}"))
+    let outline = headings
+        .iter()
+        .map(|heading| OutlineEntry {
+            title: heading.text.clone(),
+            page_index: heading.page_index,
+            x: heading.x,
+            y: heading.y,
+        })
+        .collect();
+
+    let pdf = document.finish().map_err(|e| anyhow!("{e:?}"))?;
+    Ok(RenderOutput {
+        pdf,
+        pages,
+        outline,
+    })
 }
 
 /// One heading captured during the pack pass — used to build a PDF outline
@@ -2403,7 +2464,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rendered_pdf_media_boxes_match_page_sizes() {
+    fn test_rendered_pages_match_page_sizes() {
         let markdown =
             "# First\n\nA paragraph.\n\n<!-- pagebreak -->\n\n# Second\n\nAnother paragraph.";
         for size in [
@@ -2413,19 +2474,18 @@ mod tests {
             PageSize::A4,
             PageSize::A5,
         ] {
-            let pdf = render_test_pdf(markdown, size);
-            let media_boxes = media_boxes(&pdf);
-            assert_eq!(media_boxes.len(), 2, "expected two pages for {:?}", size);
+            let output = render_test_output(markdown, size);
+            assert_eq!(output.pages.len(), 2, "expected two pages for {:?}", size);
 
             let (expected_w, expected_h) = size.dimensions();
-            for (page_idx, (actual_w, actual_h)) in media_boxes.iter().enumerate() {
+            for (page_idx, page) in output.pages.iter().enumerate() {
                 assert_close(
-                    *actual_w,
+                    page.width,
                     expected_w,
                     &format!("{:?} page {} width", size, page_idx + 1),
                 );
                 assert_close(
-                    *actual_h,
+                    page.height,
                     expected_h,
                     &format!("{:?} page {} height", size, page_idx + 1),
                 );
@@ -2444,12 +2504,12 @@ mod tests {
             Right column paragraph.\n";
 
         for size in [PageSize::HalfLetter, PageSize::Letter] {
-            let pdf = render_test_pdf(markdown, size);
+            let output = render_test_output(markdown, size);
             let (page_w, _) = size.dimensions();
             let expected_second_col_x = MARGIN_X + column_width_for(2, page_w) + COLUMN_GAP;
 
-            let (left_x, _) = outline_destination(&pdf, "Left Column Heading");
-            let (right_x, _) = outline_destination(&pdf, "Right Column Heading");
+            let (left_x, _) = outline_position(&output.outline, "Left Column Heading");
+            let (right_x, _) = outline_position(&output.outline, "Right Column Heading");
 
             assert_close(left_x, MARGIN_X, &format!("{:?} left heading x", size));
             assert_close(
@@ -2472,83 +2532,17 @@ mod tests {
         );
     }
 
-    fn render_test_pdf(markdown: &str, page_size: PageSize) -> Vec<u8> {
+    fn render_test_output(markdown: &str, page_size: PageSize) -> RenderOutput {
         let doc = crate::parser::parse(markdown).unwrap();
-        render(&doc, std::path::Path::new("."), page_size).unwrap()
+        render_with_report(&doc, std::path::Path::new("."), page_size).unwrap()
     }
 
-    fn media_boxes(pdf: &[u8]) -> Vec<(f32, f32)> {
-        let text = String::from_utf8_lossy(pdf);
-        let marker = "/MediaBox [0 0 ";
-        let mut boxes = Vec::new();
-        let mut search_from = 0;
-
-        while let Some(relative_start) = text[search_from..].find(marker) {
-            let start = search_from + relative_start + marker.len();
-            let Some(relative_end) = text[start..].find(']') else {
-                panic!("unterminated MediaBox entry");
-            };
-            let values: Vec<f32> = text[start..start + relative_end]
-                .split_whitespace()
-                .map(|s| s.parse::<f32>().expect("MediaBox number"))
-                .collect();
-            assert_eq!(values.len(), 2, "expected width/height MediaBox values");
-            boxes.push((values[0], values[1]));
-            search_from = start + relative_end + 1;
-        }
-
-        boxes
-    }
-
-    fn outline_destination(pdf: &[u8], title: &str) -> (f32, f32) {
-        let text = String::from_utf8_lossy(pdf);
-        let title_marker = format!("/Title ({title})");
-        let title_start = text
-            .find(&title_marker)
+    fn outline_position(outline: &[OutlineEntry], title: &str) -> (f32, f32) {
+        let entry = outline
+            .iter()
+            .find(|entry| entry.title == title)
             .unwrap_or_else(|| panic!("missing outline title {title:?}"));
-        let dest_relative_start = text[title_start..]
-            .find("/Dest ")
-            .unwrap_or_else(|| panic!("missing outline destination for {title:?}"));
-        let dest_start = title_start + dest_relative_start + "/Dest ".len();
-
-        let mut dest_ref = text[dest_start..].split_whitespace();
-        let object_number = dest_ref
-            .next()
-            .unwrap_or_else(|| panic!("missing destination object for {title:?}"));
-        assert_eq!(dest_ref.next(), Some("0"));
-        assert_eq!(dest_ref.next(), Some("R"));
-
-        let object_marker = format!("\n{object_number} 0 obj\n[");
-        let object_start = text
-            .find(&object_marker)
-            .map(|idx| idx + object_marker.len())
-            .unwrap_or_else(|| {
-                let object_marker = format!("{object_number} 0 obj\n[");
-                text.find(&object_marker)
-                    .map(|idx| idx + object_marker.len())
-                    .unwrap_or_else(|| {
-                        panic!("missing destination object {object_number} for {title:?}")
-                    })
-            });
-        let object_end = text[object_start..]
-            .find(']')
-            .unwrap_or_else(|| panic!("unterminated destination object {object_number}"));
-        let parts: Vec<&str> = text[object_start..object_start + object_end]
-            .split_whitespace()
-            .collect();
-
-        assert_eq!(parts.get(3), Some(&"/XYZ"));
-        let x = parts
-            .get(4)
-            .unwrap_or_else(|| panic!("missing x destination for {title:?}"))
-            .parse::<f32>()
-            .expect("destination x");
-        let y = parts
-            .get(5)
-            .unwrap_or_else(|| panic!("missing y destination for {title:?}"))
-            .parse::<f32>()
-            .expect("destination y");
-        (x, y)
+        (entry.x, entry.y)
     }
 
     fn license_attribution_line_count(page_size: PageSize) -> usize {
