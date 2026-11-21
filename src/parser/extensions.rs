@@ -151,9 +151,10 @@ mod tests {
 
     #[test]
     fn test_license_attribution_parsing() {
-        let parsed =
-            parse_license(r#"<!-- license: cc-by-sa-4.0 attribution="X by Y" changes="reformatted" -->"#)
-                .unwrap();
+        let parsed = parse_license(
+            r#"<!-- license: cc-by-sa-4.0 attribution="X by Y" changes="reformatted" -->"#,
+        )
+        .unwrap();
         assert_eq!(parsed.0, LicenseKind::CcBySa4_0);
         assert_eq!(parsed.1.attribution.as_deref(), Some("X by Y"));
         assert_eq!(parsed.1.changes.as_deref(), Some("reformatted"));
@@ -170,12 +171,21 @@ mod tests {
 
     #[test]
     fn test_code_block_type_detection() {
-        assert_eq!(detect_code_block_type("statblock"), CodeBlockType::StatBlock);
-        assert_eq!(detect_code_block_type("stat-block"), CodeBlockType::StatBlock);
+        assert_eq!(
+            detect_code_block_type("statblock"),
+            CodeBlockType::StatBlock
+        );
+        assert_eq!(
+            detect_code_block_type("stat-block"),
+            CodeBlockType::StatBlock
+        );
         assert_eq!(detect_code_block_type("monster"), CodeBlockType::StatBlock);
         assert_eq!(detect_code_block_type("boxed"), CodeBlockType::Boxed);
         assert_eq!(detect_code_block_type("read-aloud"), CodeBlockType::Boxed);
         assert_eq!(detect_code_block_type(""), CodeBlockType::Regular(None));
-        assert_eq!(detect_code_block_type("rust"), CodeBlockType::Regular(Some("rust".to_string())));
+        assert_eq!(
+            detect_code_block_type("rust"),
+            CodeBlockType::Regular(Some("rust".to_string()))
+        );
     }
 }

@@ -18,13 +18,12 @@
 //! the final page.
 
 use crate::ast::{
-    Alignment as CellAlign, Document, Element, Image as AstImage, Inline, LicenseInfo,
-    LicenseKind, Table,
+    Alignment as CellAlign, Document, Element, Image as AstImage, Inline, LicenseInfo, LicenseKind,
+    Table,
 };
 use crate::licenses::{self, LicenseFragment};
 use anyhow::{anyhow, Result};
 use clap::ValueEnum;
-use krilla::Document as KrillaDocument;
 use krilla::color::rgb;
 use krilla::geom::{PathBuilder, Point, Rect, Size, Transform};
 use krilla::image::Image;
@@ -33,11 +32,12 @@ use krilla::page::PageSettings;
 use krilla::paint::{Fill, Stroke};
 use krilla::surface::Surface;
 use krilla::text::{Font, GlyphId, KrillaGlyph};
+use krilla::Document as KrillaDocument;
 use parley::{
-    FontContext, Layout, LayoutContext,
     fontique::{Blob, Collection, CollectionOptions},
     layout::{Alignment as ParleyAlign, AlignmentOptions},
     style::{FontFamily, FontStack, FontStyle, FontWeight, LineHeight, StyleProperty},
+    FontContext, Layout, LayoutContext,
 };
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
@@ -123,8 +123,8 @@ pub fn render(doc: &Document, base_path: &Path, page_size: PageSize) -> Result<V
     while !tracks.is_empty() || emit_empty_page {
         emit_empty_page = false;
 
-        let page_settings = PageSettings::from_wh(page_w, page_h)
-            .ok_or_else(|| anyhow!("invalid page size"))?;
+        let page_settings =
+            PageSettings::from_wh(page_w, page_h).ok_or_else(|| anyhow!("invalid page size"))?;
         let mut page = document.start_page_with(page_settings);
         let mut surface = page.surface();
         let mut y = MARGIN_Y;
@@ -217,9 +217,7 @@ fn build_outline(records: &[HeadingRecord]) -> krilla::outline::Outline {
     // arrives, then push the new heading.
     let mut stack: Vec<(u8, OutlineNode)> = Vec::new();
 
-    let close_to = |stack: &mut Vec<(u8, OutlineNode)>,
-                    outline: &mut Outline,
-                    until_level: u8| {
+    let close_to = |stack: &mut Vec<(u8, OutlineNode)>, outline: &mut Outline, until_level: u8| {
         while stack
             .last()
             .map(|(l, _)| *l >= until_level)
@@ -242,7 +240,6 @@ fn build_outline(records: &[HeadingRecord]) -> krilla::outline::Outline {
     close_to(&mut stack, &mut outline, 0);
     outline
 }
-
 
 /// A run of blocks with a single column count plus an optional trailing page
 /// break. Tracks come from `build_tracks` and are consumed at pack time.
@@ -389,7 +386,15 @@ fn build_tracks(
                 }
                 let mut span_blocks = Vec::new();
                 let span_w = column_width_for(1, page_w);
-                lay_out_element(el, 0.0, font_cx, layout_cx, span_w, base_path, &mut span_blocks);
+                lay_out_element(
+                    el,
+                    0.0,
+                    font_cx,
+                    layout_cx,
+                    span_w,
+                    base_path,
+                    &mut span_blocks,
+                );
                 if let Some(LaidOut::Block { layout, .. }) = span_blocks.last_mut() {
                     layout.align(
                         Some(span_w),
@@ -405,7 +410,15 @@ fn build_tracks(
             }
             other => {
                 let cw = column_width_for(current_columns, page_w);
-                lay_out_element(other, 0.0, font_cx, layout_cx, cw, base_path, &mut current_blocks);
+                lay_out_element(
+                    other,
+                    0.0,
+                    font_cx,
+                    layout_cx,
+                    cw,
+                    base_path,
+                    &mut current_blocks,
+                );
             }
         }
     }
@@ -427,12 +440,7 @@ fn push_page_break_track(
     current_blocks: &mut Vec<LaidOut>,
     current_columns: u8,
 ) {
-    if current_blocks.is_empty()
-        && tracks
-            .last()
-            .map(|t| t.page_break_after)
-            .unwrap_or(false)
-    {
+    if current_blocks.is_empty() && tracks.last().map(|t| t.page_break_after).unwrap_or(false) {
         return;
     }
     tracks.push(Track {
@@ -570,7 +578,15 @@ fn make_block(
     top_margin: f32,
     splittable: bool,
 ) -> LaidOut {
-    make_block_inner(layout, text, indent, space_after, top_margin, splittable, None)
+    make_block_inner(
+        layout,
+        text,
+        indent,
+        space_after,
+        top_margin,
+        splittable,
+        None,
+    )
 }
 
 fn make_heading_block(
@@ -629,8 +645,19 @@ fn make_centered_block(
     top_margin: f32,
 ) -> LaidOut {
     let mut layout = build_layout(font_cx, layout_cx, text, width, size, weight, style, &[]);
-    layout.align(Some(width), ParleyAlign::Center, AlignmentOptions::default());
-    make_block(layout, text.to_string(), 0.0, space_after, top_margin, false)
+    layout.align(
+        Some(width),
+        ParleyAlign::Center,
+        AlignmentOptions::default(),
+    );
+    make_block(
+        layout,
+        text.to_string(),
+        0.0,
+        space_after,
+        top_margin,
+        false,
+    )
 }
 
 fn column_width_for(cols: u8, page_w: f32) -> f32 {
@@ -699,7 +726,9 @@ fn pack_into_column(
             match try_split_block(block, remaining) {
                 Ok((top, bottom)) => {
                     let advance = block_height(&top) + block_space_after(&top);
-                    draw_block(&top, surface, column_x, draw_y, font_cache, page_index, headings);
+                    draw_block(
+                        &top, surface, column_x, draw_y, font_cache, page_index, headings,
+                    );
                     y = draw_y + advance;
                     if let Some(bottom) = bottom {
                         blocks.insert(0, bottom);
@@ -710,7 +739,9 @@ fn pack_into_column(
                     if at_top {
                         // Can't split and can't move — overflow it.
                         let advance = block_height(&original) + block_space_after(&original);
-                        draw_block(&original, surface, column_x, draw_y, font_cache, page_index, headings);
+                        draw_block(
+                            &original, surface, column_x, draw_y, font_cache, page_index, headings,
+                        );
                         y = draw_y + advance;
                     } else {
                         blocks.insert(0, original);
@@ -721,7 +752,9 @@ fn pack_into_column(
         } else {
             let block = blocks.remove(0);
             let advance = block_height(&block) + block_space_after(&block);
-            draw_block(&block, surface, column_x, draw_y, font_cache, page_index, headings);
+            draw_block(
+                &block, surface, column_x, draw_y, font_cache, page_index, headings,
+            );
             y = draw_y + advance;
         }
     }
@@ -984,7 +1017,9 @@ fn place_blocks_into_column(
         let at_top = i == 0;
         let collapsed_top = if at_top { 0.0 } else { block_top_margin(block) };
         let draw_y = y + collapsed_top;
-        draw_block(block, surface, column_x, draw_y, font_cache, page_index, headings);
+        draw_block(
+            block, surface, column_x, draw_y, font_cache, page_index, headings,
+        );
         y = draw_y + block_height(block) + block_space_after(block);
     }
     y
@@ -1276,7 +1311,10 @@ fn draw_table(
     }
 
     let mut xx = table_left;
-    for &w in column_widths.iter().take(column_widths.len().saturating_sub(1)) {
+    for &w in column_widths
+        .iter()
+        .take(column_widths.len().saturating_sub(1))
+    {
         xx += w;
         let mut pb = PathBuilder::new();
         pb.move_to(xx, table_top);
@@ -1495,7 +1533,7 @@ fn lay_out_element(
                 indent,
                 available,
                 Some((0xe8, 0xe8, 0xe8)), // gray fill
-                None,                      // no border
+                None,                     // no border
                 FontStyle::Normal,
                 font_cx,
                 layout_cx,
@@ -1506,8 +1544,8 @@ fn lay_out_element(
                 content,
                 indent,
                 available,
-                Some((0xf4, 0xf4, 0xf0)),       // off-white fill
-                Some(((0x99, 0x99, 0x99), 0.5)),// thin gray border
+                Some((0xf4, 0xf4, 0xf0)),        // off-white fill
+                Some(((0x99, 0x99, 0x99), 0.5)), // thin gray border
                 FontStyle::Italic,
                 font_cx,
                 layout_cx,
@@ -1519,7 +1557,9 @@ fn lay_out_element(
             }
         }
         Element::CodeBlock { code, .. } => {
-            out.push(lay_out_code_block(code, indent, available, font_cx, layout_cx));
+            out.push(lay_out_code_block(
+                code, indent, available, font_cx, layout_cx,
+            ));
         }
         // Element::License is handled at track-build time.
         _ => {}
@@ -1579,12 +1619,7 @@ fn lay_out_code_block(
     }
 }
 
-fn lay_out_image(
-    img: &AstImage,
-    indent: f32,
-    available: f32,
-    base_path: &Path,
-) -> Option<LaidOut> {
+fn lay_out_image(img: &AstImage, indent: f32, available: f32, base_path: &Path) -> Option<LaidOut> {
     let path = base_path.join(&img.path);
     let bytes = std::fs::read(&path).ok()?;
     let ext = img
@@ -1919,7 +1954,11 @@ fn find_single_star(chars: &[char], start: usize) -> Option<usize> {
         }
         if chars[i] == '*' {
             let prev = if i > 0 { chars[i - 1] } else { ' ' };
-            let next = if i + 1 < chars.len() { chars[i + 1] } else { ' ' };
+            let next = if i + 1 < chars.len() {
+                chars[i + 1]
+            } else {
+                ' '
+            };
             if prev != '*' && next != '*' {
                 return Some(i);
             }
@@ -2049,7 +2088,11 @@ fn build_row_cells(
 
 fn list_marker(ordered: bool, index: usize, indent: f32, task: Option<bool>) -> String {
     if let Some(checked) = task {
-        if checked { "[x]".to_string() } else { "[ ]".to_string() }
+        if checked {
+            "[x]".to_string()
+        } else {
+            "[ ]".to_string()
+        }
     } else if ordered {
         format!("{}.", index + 1)
     } else if indent == 0.0 {
@@ -2085,7 +2128,9 @@ fn attach_marker_to_first_block(
 ) {
     for block in &mut out[start..] {
         if let LaidOut::Block {
-            marker, space_after, ..
+            marker,
+            space_after,
+            ..
         } = block
         {
             *marker = Some(Marker {
@@ -2121,7 +2166,13 @@ fn build_font_context() -> FontContext {
         shared: false,
         system_fonts: false,
     });
-    for bytes in [FONT_REGULAR, FONT_ITALIC, FONT_BOLD, FONT_BOLD_ITALIC, FONT_MONO] {
+    for bytes in [
+        FONT_REGULAR,
+        FONT_ITALIC,
+        FONT_BOLD,
+        FONT_BOLD_ITALIC,
+        FONT_MONO,
+    ] {
         collection.register_fonts(Blob::new(Arc::new(bytes.to_vec())), None);
     }
     FontContext {
@@ -2142,9 +2193,9 @@ fn build_layout(
 ) -> Layout<rgb::Color> {
     let mut builder = layout_cx.ranged_builder(font_cx, text, 1.0, false);
     builder.push_default(StyleProperty::Brush(rgb::Color::new(0, 0, 0)));
-    builder.push_default(StyleProperty::FontStack(FontStack::List(Cow::Borrowed(
-        &[FontFamily::Named(Cow::Borrowed(FAMILY))],
-    ))));
+    builder.push_default(StyleProperty::FontStack(FontStack::List(Cow::Borrowed(&[
+        FontFamily::Named(Cow::Borrowed(FAMILY)),
+    ]))));
     builder.push_default(StyleProperty::FontSize(size));
     builder.push_default(StyleProperty::FontWeight(base_weight));
     builder.push_default(StyleProperty::FontStyle(base_style));
@@ -2160,9 +2211,9 @@ fn build_layout(
         }
         if span.monospace {
             builder.push(
-                StyleProperty::FontStack(FontStack::List(Cow::Borrowed(&[
-                    FontFamily::Named(Cow::Borrowed(MONO_FAMILY)),
-                ]))),
+                StyleProperty::FontStack(FontStack::List(Cow::Borrowed(&[FontFamily::Named(
+                    Cow::Borrowed(MONO_FAMILY),
+                )]))),
                 span.range.clone(),
             );
         }
@@ -2182,14 +2233,7 @@ fn draw_layout(
 ) {
     let len = layout.len();
     draw_layout_slice(
-        surface,
-        layout,
-        origin_x,
-        origin_y,
-        0,
-        len,
-        text,
-        font_cache,
+        surface, layout, origin_x, origin_y, 0, len, text, font_cache,
     );
 }
 
@@ -2228,9 +2272,7 @@ fn draw_layout_slice(
             let font_size = run.font_size();
             let krilla_font = font_cache
                 .entry(font_id)
-                .or_insert_with(|| {
-                    Font::new(font_data.into(), parley_font.index as u32).unwrap()
-                })
+                .or_insert_with(|| Font::new(font_data.into(), parley_font.index as u32).unwrap())
                 .clone();
 
             let run_start_x = x;
@@ -2399,7 +2441,10 @@ mod tests {
     fn test_page_size_digest_shorter_than_half_letter() {
         let (_, h_half) = PageSize::HalfLetter.dimensions();
         let (_, h_digest) = PageSize::Digest.dimensions();
-        assert!(h_digest < h_half, "digest should be shorter than half-letter");
+        assert!(
+            h_digest < h_half,
+            "digest should be shorter than half-letter"
+        );
     }
 
     #[test]
