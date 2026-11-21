@@ -4,6 +4,8 @@
 //! change, rebuilds the PDF (writing it next to the source) and emits a log
 //! event to the frontend.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
@@ -19,6 +21,9 @@ use the_sieve::PageSize;
 struct FileStamp {
     modified: Option<SystemTime>,
     len: u64,
+    /// Hash of the file contents, used to notice edits that keep the
+    /// modification time and length unchanged.
+    hash: Option<u64>,
 }
 
 #[derive(Default)]
@@ -96,10 +101,21 @@ fn rebuild_current(app: &AppHandle) {
     });
 }
 
+/// The hash only has to be comparable with one taken earlier in the same process, so it needs no stable
+/// algorithm across Rust builds; the fast path (an equal stamp) still decides when nothing is re-read.
+fn file_contents_hash(path: &Path) -> Option<u64> {
+    let contents = std::fs::read(path).ok()?;
+    let mut hasher = DefaultHasher::new();
+    hasher.write(&contents);
+    Some(hasher.finish())
+}
+
 fn file_stamp(path: &Path) -> Option<FileStamp> {
-    std::fs::metadata(path).ok().map(|m| FileStamp {
-        modified: m.modified().ok(),
-        len: m.len(),
+    let metadata = std::fs::metadata(path).ok()?;
+    Some(FileStamp {
+        modified: metadata.modified().ok(),
+        len: metadata.len(),
+        hash: file_contents_hash(path),
     })
 }
 
@@ -112,10 +128,7 @@ fn file_stamp_changed(
     };
 
     let mut last_seen = last_seen_stamp.lock().unwrap();
-    if last_seen
-        .map(|previous| previous == current_stamp)
-        .unwrap_or(false)
-    {
+    if last_seen.is_some_and(|previous| previous == current_stamp) {
         return false;
     }
 
@@ -245,6 +258,7 @@ mod tests {
         let stamp = FileStamp {
             modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(10)),
             len: 123,
+            hash: None,
         };
         let last_seen = Mutex::new(Some(stamp));
 
@@ -257,10 +271,12 @@ mod tests {
         let first = FileStamp {
             modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(10)),
             len: 123,
+            hash: None,
         };
         let second = FileStamp {
             modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(20)),
             len: 456,
+            hash: None,
         };
         let last_seen = Mutex::new(Some(first));
 
@@ -275,10 +291,12 @@ mod tests {
         let first = FileStamp {
             modified: Some(modified),
             len: 123,
+            hash: None,
         };
         let second = FileStamp {
             modified: Some(modified),
             len: 456,
+            hash: None,
         };
         let last_seen = Mutex::new(Some(first));
 
@@ -291,11 +309,80 @@ mod tests {
         let stamp = FileStamp {
             modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(10)),
             len: 123,
+            hash: None,
         };
         let last_seen = Mutex::new(Some(stamp));
 
         assert!(file_stamp_changed(&last_seen, None));
         assert_eq!(*last_seen.lock().unwrap(), Some(stamp));
+    }
+
+    #[test]
+    fn changed_hash_triggers_when_time_and_length_are_unchanged() {
+        let modified = SystemTime::UNIX_EPOCH + Duration::from_secs(10);
+        let first = FileStamp {
+            modified: Some(modified),
+            len: 123,
+            hash: Some(1),
+        };
+        let second = FileStamp {
+            modified: Some(modified),
+            len: 123,
+            hash: Some(2),
+        };
+        let last_seen = Mutex::new(Some(first));
+
+        assert!(file_stamp_changed(&last_seen, Some(second)));
+        assert_eq!(*last_seen.lock().unwrap(), Some(second));
+    }
+
+    #[test]
+    fn same_length_same_time_content_change_triggers_a_rebuild() {
+        use std::io::Write;
+
+        let dir = std::env::temp_dir().join(format!(
+            "the-sieve-stamp-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("note.md");
+        std::fs::write(&path, b"first\n").unwrap();
+
+        // The fast path still applies: with nothing changed there is no rebuild.
+        let last_seen = Mutex::new(file_stamp(&path));
+        assert!(!file_stamp_changed(&last_seen, file_stamp(&path)));
+
+        // Rewrite the file with other bytes of the same length and put the modification time back, as a
+        // file system with a coarse timestamp resolution or an edit inside one tick would show it.
+        let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&path)
+            .unwrap();
+        file.write_all(b"secnd\n").unwrap();
+        file.set_times(std::fs::FileTimes::new().set_modified(modified))
+            .unwrap();
+        file.sync_all().unwrap();
+        drop(file);
+
+        let after = std::fs::metadata(&path).unwrap();
+        assert_eq!(after.len(), 6, "the length must stay the same");
+        assert_eq!(
+            after.modified().unwrap(),
+            modified,
+            "the modification time must stay the same"
+        );
+
+        // Only the contents differ, so the stamp still sees a change, once.
+        assert!(file_stamp_changed(&last_seen, file_stamp(&path)));
+        assert!(!file_stamp_changed(&last_seen, file_stamp(&path)));
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
